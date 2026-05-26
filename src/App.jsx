@@ -9,7 +9,6 @@ import CreateChannelPage from './pages/CreateChannelPage';
 import EditChannelPage from './pages/EditChannelPage';
 import ChannelViewPage from './pages/ChannelViewPage';
 import GeneratePostPage from './pages/GeneratePostPage';
-import SettingsPage from './pages/SettingsPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import LoginPage from './pages/LoginPage';
@@ -71,16 +70,6 @@ function Navigation() {
                 }`}
               >
                 Canais
-              </Link>
-              <Link
-                to="/settings"
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive('/settings')
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                Configurações
               </Link>
             </div>
           </div>
@@ -152,7 +141,6 @@ function AppRoutes() {
           <Route path="/channels/:id" element={<ProtectedRoute><ChannelViewPage /></ProtectedRoute>} />
           <Route path="/channels/:id/edit" element={<ProtectedRoute><EditChannelPage /></ProtectedRoute>} />
           <Route path="/channels/:id/generate" element={<ProtectedRoute><GeneratePostPage /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
         </Routes>
       </main>
       <Footer />
