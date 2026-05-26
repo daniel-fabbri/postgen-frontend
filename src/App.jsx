@@ -1,7 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { useTheme } from './ThemeContext';
-import { Moon, Sun, Sparkles } from 'lucide-react';
+import { useAuth, AuthProvider } from './AuthContext';
+import { Moon, Sun, Sparkles, LogOut, User } from 'lucide-react';
 import HomePage from './pages/HomePage';
 import ChannelsPage from './pages/ChannelsPage';
 import CreateChannelPage from './pages/CreateChannelPage';
@@ -11,12 +12,30 @@ import GeneratePostPage from './pages/GeneratePostPage';
 import SettingsPage from './pages/SettingsPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600" />
+      </div>
+    );
+  }
+  if (!user) return <Navigate to="/login" replace />;
+  return children;
+}
 
 function Navigation() {
   const { darkMode, toggleDarkMode } = useTheme();
+  const { user, logout } = useAuth();
   const location = useLocation();
 
   const isActive = (path) => location.pathname === path;
+
+  if (!user) return null;
 
   return (
     <nav className="relative z-10 bg-white dark:bg-gray-800 shadow-lg transition-colors">
@@ -64,7 +83,11 @@ function Navigation() {
               </Link>
             </div>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+              <User className="w-4 h-4" />
+              <span>{user.name}</span>
+            </div>
             <button
               onClick={toggleDarkMode}
               className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
@@ -76,6 +99,14 @@ function Navigation() {
                 <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
               )}
             </button>
+            <button
+              onClick={logout}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title="Sair"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Sair</span>
+            </button>
           </div>
         </div>
       </div>
@@ -84,6 +115,8 @@ function Navigation() {
 }
 
 function Footer() {
+  const { user } = useAuth();
+  if (!user) return null;
   return (
     <footer className="mt-16 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-500 dark:text-gray-400">
@@ -101,26 +134,37 @@ function Footer() {
   );
 }
 
+function AppRoutes() {
+  const { user } = useAuth();
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex flex-col">
+      <Navigation />
+      <main className={`flex-1 ${user ? 'max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8' : ''}`}>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+          <Route path="/channels" element={<ProtectedRoute><ChannelsPage /></ProtectedRoute>} />
+          <Route path="/channels/create" element={<ProtectedRoute><CreateChannelPage /></ProtectedRoute>} />
+          <Route path="/channels/:id" element={<ProtectedRoute><ChannelViewPage /></ProtectedRoute>} />
+          <Route path="/channels/:id/edit" element={<ProtectedRoute><EditChannelPage /></ProtectedRoute>} />
+          <Route path="/channels/:id/generate" element={<ProtectedRoute><GeneratePostPage /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex flex-col">
-        <Navigation />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/channels" element={<ChannelsPage />} />
-            <Route path="/channels/create" element={<CreateChannelPage />} />
-            <Route path="/channels/:id" element={<ChannelViewPage />} />
-            <Route path="/channels/:id/edit" element={<EditChannelPage />} />
-            <Route path="/channels/:id/generate" element={<GeneratePostPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </Router>
   );
 }

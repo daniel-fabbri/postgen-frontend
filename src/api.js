@@ -4,10 +4,35 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8004/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
 });
+
+// Attach JWT token to every request
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('postgen_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Redirect to login on 401
+api.interceptors.response.use(
+  res => res,
+  err => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('postgen_token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(err);
+  }
+);
+
+export const authAPI = {
+  login: (email, password) => api.post('/auth/login', { email, password }),
+  register: (email, password, name) => api.post('/auth/register', { email, password, name }),
+  me: () => api.get('/auth/me'),
+};
 
 export const settingsAPI = {
   get: () => api.get('/settings'),
@@ -29,9 +54,7 @@ export const avatarsAPI = {
   upload: (file, channelId = null) => {
     const formData = new FormData();
     formData.append('file', file);
-    if (channelId) {
-      formData.append('channel_id', channelId);
-    }
+    if (channelId) formData.append('channel_id', channelId);
     return api.post('/avatars/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
@@ -43,7 +66,7 @@ export const postsAPI = {
   get: (id) => api.get(`/posts/${id}`),
   generate: (channelId, additionalPrompt = '') => api.post('/posts/generate', {
     channel_id: channelId,
-    additional_prompt: additionalPrompt || null
+    additional_prompt: additionalPrompt || null,
   }),
   publishPost: (postId) => api.post(`/posts/${postId}/publish`),
   update: (id, text, imagePath) => api.patch(`/posts/${id}`, { text, image_path: imagePath }),
