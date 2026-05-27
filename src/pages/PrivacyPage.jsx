@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import PublicHeader from '../components/PublicHeader';
+import PublicFooter from '../components/PublicFooter';
 
 const Section = ({ title, children }) => (
   <div className="py-5 border-b border-gray-100 dark:border-gray-700 last:border-0">
@@ -131,6 +132,7 @@ const PrivacyPage = () => {
       .
     </p>
   </div>
+  {!user && <PublicFooter />}
   </>
   );
 };
