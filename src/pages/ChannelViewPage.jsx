@@ -113,6 +113,10 @@ const ChannelViewPage = () => {
   };
 
   const handleSavePost = async () => {
+    if (!localStorage.getItem('postgen_token')) {
+      window.location.href = '/login';
+      return;
+    }
     try {
       setSavingPost(true);
       await postsAPI.update(editingPost.id, editPostText, editingPost.image_path);
@@ -120,7 +124,9 @@ const ChannelViewPage = () => {
       setPosts(postsRes.data.filter(p => p.channel_id === id));
       setShowEditPostModal(false);
     } catch (error) {
-      alert('Erro ao salvar post');
+      const status = error.response?.status;
+      if (status === 401 || status === 403) return; // interceptor handles redirect to login
+      alert('Erro ao salvar post: ' + (error.response?.data?.detail || error.message || 'erro desconhecido'));
     } finally {
       setSavingPost(false);
     }

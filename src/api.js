@@ -22,11 +22,11 @@ api.interceptors.request.use(config => {
   return config;
 });
 
-// Redirect to login on 401
+// Redirect to login on 401 or 403 (unauthenticated)
 api.interceptors.response.use(
   res => res,
   err => {
-    if (err.response?.status === 401) {
+    if (err.response?.status === 401 || err.response?.status === 403) {
       localStorage.removeItem('postgen_token');
       window.location.href = '/login';
     }
