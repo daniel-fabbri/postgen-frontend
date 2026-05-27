@@ -8,6 +8,7 @@ import CreateChannelPage from './pages/CreateChannelPage';
 import EditChannelPage from './pages/EditChannelPage';
 import ChannelViewPage from './pages/ChannelViewPage';
 import GeneratePostPage from './pages/GeneratePostPage';
+import GenerateVideoPage from './pages/GenerateVideoPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import LoginPage from './pages/LoginPage';
@@ -115,6 +116,7 @@ function AppRoutes() {
           <Route path="/channels/:id" element={<ProtectedRoute><ChannelViewPage /></ProtectedRoute>} />
           <Route path="/channels/:id/edit" element={<ProtectedRoute><EditChannelPage /></ProtectedRoute>} />
           <Route path="/channels/:id/generate" element={<ProtectedRoute><GeneratePostPage /></ProtectedRoute>} />
+          <Route path="/channels/:id/generate-video" element={<ProtectedRoute><GenerateVideoPage /></ProtectedRoute>} />
         </Routes>
       </main>
       <Footer />

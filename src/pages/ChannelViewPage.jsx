@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { channelsAPI, postsAPI, avatarsAPI, postImageUrl } from '../api';
-import { ArrowLeft, Edit2, Sparkles, X, Loader, Edit, Calendar, ChevronLeft, ChevronRight, Share2, Camera, Upload, Wand2, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Edit2, Sparkles, X, Loader, Edit, Calendar, ChevronLeft, ChevronRight, Share2, Camera, Upload, Wand2, Image as ImageIcon, Video } from 'lucide-react';
 
 const ChannelViewPage = () => {
   const { id } = useParams();
@@ -347,11 +347,18 @@ const ChannelViewPage = () => {
             <h1 className="text-3xl font-bold">{channel.name}</h1>
             <div className="flex items-center space-x-3">
               <button
+                onClick={() => navigate(`/channels/${id}/generate-video`)}
+                className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2"
+              >
+                <Video size={16} />
+                <span>Gerar Vídeo</span>
+              </button>
+              <button
                 onClick={() => navigate(`/channels/${id}/generate`)}
                 className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2"
               >
                 <Sparkles size={16} />
-                <span>Generate New Post</span>
+                <span>Gerar Post</span>
               </button>
               <button
                 onClick={() => setShowEditModal(true)}

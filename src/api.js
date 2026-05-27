@@ -88,4 +88,16 @@ export const postsAPI = {
     api.post(`/posts/${id}/image/generate`, { prompt, channel_id: channelId }),
 };
 
+export const videosAPI = {
+  getAll: (channelId = null) => api.get('/videos', { params: channelId ? { channel_id: channelId } : {} }),
+  generate: (channelId, additionalPrompt, seconds, size) =>
+    api.post('/videos/generate', {
+      channel_id: channelId,
+      additional_prompt: additionalPrompt || null,
+      seconds,
+      size,
+    }),
+  delete: (id) => api.delete(`/videos/${id}`),
+};
+
 export default api;
