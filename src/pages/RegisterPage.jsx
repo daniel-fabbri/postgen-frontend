@@ -24,7 +24,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(form.email, form.password, form.name);
-      navigate('/');
+      navigate('/channels');
     } catch (err) {
       setError(err.response?.data?.detail || 'Erro ao criar conta.');
     } finally {

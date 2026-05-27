@@ -16,7 +16,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(form.email, form.password);
-      navigate('/');
+      navigate('/channels');
     } catch (err) {
       setError(err.response?.data?.detail || 'Erro ao fazer login. Verifique suas credenciais.');
     } finally {

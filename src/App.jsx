@@ -1,9 +1,8 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { useTheme } from './ThemeContext';
 import { useAuth, AuthProvider } from './AuthContext';
 import { Moon, Sun, Sparkles, LogOut, User } from 'lucide-react';
-import HomePage from './pages/HomePage';
 import ChannelsPage from './pages/ChannelsPage';
 import CreateChannelPage from './pages/CreateChannelPage';
 import EditChannelPage from './pages/EditChannelPage';
@@ -31,9 +30,6 @@ function ProtectedRoute({ children }) {
 function Navigation() {
   const { darkMode, toggleDarkMode } = useTheme();
   const { user, logout } = useAuth();
-  const location = useLocation();
-
-  const isActive = (path) => location.pathname === path;
 
   if (!user) return null;
 
@@ -42,7 +38,7 @@ function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
-            <Link to="/" className="flex items-center space-x-3 group">
+            <Link to="/channels" className="flex items-center space-x-3 group">
               <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-2 rounded-lg transform group-hover:scale-110 transition-transform">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
@@ -50,28 +46,6 @@ function Navigation() {
                 PostGen
               </span>
             </Link>
-            <div className="ml-10 flex items-center space-x-4">
-              <Link
-                to="/"
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive('/')
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                Home
-              </Link>
-              <Link
-                to="/channels"
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive('/channels')
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                Canais
-              </Link>
-            </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
@@ -135,7 +109,7 @@ function AppRoutes() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="/" element={user ? <HomePage /> : <LandingPage />} />
+          <Route path="/" element={user ? <Navigate to="/channels" replace /> : <LandingPage />} />
           <Route path="/channels" element={<ProtectedRoute><ChannelsPage /></ProtectedRoute>} />
           <Route path="/channels/create" element={<ProtectedRoute><CreateChannelPage /></ProtectedRoute>} />
           <Route path="/channels/:id" element={<ProtectedRoute><ChannelViewPage /></ProtectedRoute>} />
