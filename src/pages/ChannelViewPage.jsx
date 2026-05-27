@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { channelsAPI, postsAPI, avatarsAPI } from '../api';
+import { channelsAPI, postsAPI, avatarsAPI, postImageUrl } from '../api';
 import { ArrowLeft, Edit2, Sparkles, X, Loader, Edit, Calendar, ChevronLeft, ChevronRight, Share2, Camera, Upload, Wand2, Image as ImageIcon } from 'lucide-react';
 
 const ChannelViewPage = () => {
@@ -103,7 +103,7 @@ const ChannelViewPage = () => {
   const openEditPostModal = (post) => {
     setEditingPost({ ...post });
     setEditPostText(post.text);
-    setEditPostImageUrl(`http://localhost:8004/posts/${post.image_path}`);
+    setEditPostImageUrl(postImageUrl(post.image_path));
     setShowImagePicker(false);
     setImagePickerTab('gallery');
     setImageGenPrompt('');
@@ -175,7 +175,7 @@ const ChannelViewPage = () => {
   };
 
   const handleSelectPostImage = (post) => {
-    setEditPostImageUrl(`http://localhost:8004/posts/${post.image_path}`);
+    setEditPostImageUrl(postImageUrl(post.image_path));
     setEditingPost(prev => ({ ...prev, image_path: post.image_path }));
     setShowImagePicker(false);
   };
@@ -394,7 +394,7 @@ const ChannelViewPage = () => {
               >
                 <div className="aspect-square overflow-hidden">
                   <img
-                    src={`http://localhost:8004/posts/${post.image_path}`}
+                    src={postImageUrl(post.image_path)}
                     alt="Post"
                     className="w-full h-full object-cover"
                   />
@@ -818,7 +818,7 @@ const ChannelViewPage = () => {
                               }`}
                             >
                               <img
-                                src={`http://localhost:8004/posts/${p.image_path}`}
+                                src={postImageUrl(p.image_path)}
                                 alt="Post"
                                 className="w-full h-full object-cover"
                               />
@@ -953,7 +953,7 @@ const ChannelViewPage = () => {
             {/* Image */}
             <div className="flex-1 flex items-center justify-center">
               <img
-                src={`http://localhost:8004/posts/${posts[currentPostIndex].image_path}`}
+                src={postImageUrl(posts[currentPostIndex].image_path)}
                 alt="Post"
                 className="max-h-[85vh] max-w-full object-contain rounded-lg shadow-2xl"
               />

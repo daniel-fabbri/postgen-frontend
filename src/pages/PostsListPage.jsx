@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { channelsAPI, postsAPI } from '../api';
+import { channelsAPI, postsAPI, postImageUrl } from '../api';
 import { ArrowLeft, Loader, Calendar, CheckCircle, XCircle, Sparkles } from 'lucide-react';
 
 const PostsListPage = () => {
@@ -112,7 +112,7 @@ const PostsListPage = () => {
                 <div className="space-y-3">
                   {post.image_path && (
                     <img
-                      src={`http://localhost:8004/posts/${post.image_path}`}
+                      src={postImageUrl(post.image_path)}
                       alt="Post"
                       className="w-full rounded-lg border border-gray-300 dark:border-gray-600"
                     />

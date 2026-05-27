@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { channelsAPI, postsAPI } from '../api';
-import { Loader, Sparkles, Send, ArrowLeft, RefreshCw } from 'lucide-react';
+import { channelsAPI, postsAPI, postImageUrl } from '../api';
+import { Loader, Sparkles, Send, ArrowLeft, RefreshCw, Copy, CheckCheck, ImageIcon } from 'lucide-react';
 
 const GeneratePostPage = () => {
   const { id } = useParams();
@@ -12,6 +12,8 @@ const GeneratePostPage = () => {
   const [publishing, setPublishing] = useState(false);
   const [loadingChannel, setLoadingChannel] = useState(true);
   const [additionalPrompt, setAdditionalPrompt] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [published, setPublished] = useState(false);
 
   useEffect(() => {
     loadChannel();
@@ -24,7 +26,6 @@ const GeneratePostPage = () => {
       setChannel(response.data);
     } catch (error) {
       console.error('Error loading channel:', error);
-      alert('Channel not found');
       navigate(`/channels/${id}`);
     } finally {
       setLoadingChannel(false);
@@ -35,166 +36,226 @@ const GeneratePostPage = () => {
     try {
       setLoading(true);
       setPost(null);
+      setPublished(false);
       const response = await postsAPI.generate(id, additionalPrompt);
       setPost(response.data);
     } catch (error) {
       console.error('Error generating post:', error);
-      alert('Error generating post. Please check your Azure OpenAI settings.');
+      alert('Erro ao gerar post. Verifique as configurações do Azure OpenAI.');
     } finally {
       setLoading(false);
     }
   };
 
   const handlePublish = async () => {
-    if (!post) return;
-
-    if (!confirm('Publish this post to Instagram?')) return;
-
+    if (!post?.id) return;
+    if (!confirm('Publicar este post no Instagram?')) return;
     try {
       setPublishing(true);
-      await postsAPI.publish(id, post.text, post.image_url);
-      alert('Post published successfully! (Demo mode - check console for details)');
-      setPost(null);
+      await postsAPI.publishPost(post.id);
+      setPublished(true);
     } catch (error) {
       console.error('Error publishing post:', error);
-      alert('Error publishing post. Please check your Instagram settings.');
+      alert('Erro ao publicar: ' + (error.response?.data?.detail || error.message));
     } finally {
       setPublishing(false);
     }
   };
 
+  const handleCopyCaption = () => {
+    if (!post?.text) return;
+    navigator.clipboard.writeText(post.text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (loadingChannel) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader className="animate-spin text-primary-600" size={48} />
+        <Loader className="animate-spin text-purple-600" size={40} />
       </div>
     );
   }
 
-  if (!channel) {
-    return null;
-  }
+  if (!channel) return null;
+
+  const imageUrl = post ? (post.image_url?.startsWith('http') ? post.image_url : postImageUrl(post.image_url)) : null;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* Back button */}
       <button
         onClick={() => navigate(`/channels/${id}`)}
-        className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+        className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors text-sm font-medium"
       >
-        <ArrowLeft size={20} />
-        <span>Back to Channel</span>
+        <ArrowLeft size={16} />
+        Voltar para o canal
       </button>
 
-      {/* Channel Info */}
-      <div className="bg-gradient-to-br from-primary-500 to-purple-600 rounded-xl p-6 text-white shadow-xl">
-        <div className="flex items-start space-x-4">
-          {channel.suggested_image_url && (
-            <img 
-              src={channel.suggested_image_url} 
+      {/* Channel header */}
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-6 text-white shadow-xl">
+        <div className="flex items-center gap-4">
+          {channel.suggested_image_url ? (
+            <img
+              src={channel.suggested_image_url}
               alt={channel.name}
-              className="w-20 h-20 rounded-lg object-cover border-2 border-white shadow-lg"
+              className="w-14 h-14 rounded-xl object-cover border-2 border-white/30 shadow-lg"
             />
+          ) : (
+            <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+              <ImageIcon size={24} className="text-white/80" />
+            </div>
           )}
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold mb-2">{channel.name}</h1>
-            <p className="text-primary-100">Pronto para criar conteúdo incrível com IA</p>
+          <div>
+            <h1 className="text-xl font-bold">{channel.name}</h1>
+            <p className="text-purple-200 text-sm mt-0.5">Gerador de conteúdo com IA</p>
           </div>
         </div>
       </div>
 
-      {/* Generate Button */}
-      {!post && !loading && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
-          <div className="flex justify-center mb-4">
-            <div className="p-4 bg-gradient-to-br from-primary-500 to-purple-600 rounded-full">
-              <Sparkles size={48} className="text-white" />
-            </div>
-          </div>
-          <h2 className="text-2xl font-bold mb-2 text-center">Generate AI Post</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">
-            A IA criará um post completo com texto e imagem para você
-          </p>
-          
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Contexto Adicional (Opcional)
-            </label>
-            <textarea
-              value={additionalPrompt}
-              onChange={(e) => setAdditionalPrompt(e.target.value)}
-              placeholder="Adicione informações específicas para esta geração... (ex: 'Falar sobre o Fusca 1975', 'Mencionar a cor azul', etc.)"
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-              rows="4"
-            />
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              Use este campo para orientar a IA com instruções específicas para este post
-            </p>
-          </div>
-          
+      {/* Prompt input — always visible */}
+      {!loading && (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            Contexto adicional <span className="font-normal text-gray-400">(opcional)</span>
+          </label>
+          <textarea
+            value={additionalPrompt}
+            onChange={(e) => setAdditionalPrompt(e.target.value)}
+            placeholder="Ex: Falar sobre o lançamento do produto X, usar tom descontraído, mencionar promoção de fim de semana..."
+            className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-sm"
+            rows={3}
+          />
           <button
             onClick={handleGenerate}
-            className="w-full bg-gradient-to-r from-primary-500 to-purple-600 text-white px-8 py-4 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center space-x-2"
+            disabled={loading}
+            className="mt-4 w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-200 dark:hover:shadow-purple-900/30 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <Sparkles size={20} />
-            <span>Generate Post</span>
+            <Sparkles size={18} />
+            {post ? 'Gerar novo post' : 'Gerar post com IA'}
           </button>
         </div>
       )}
 
-      {/* Loading State */}
+      {/* Loading state */}
       {loading && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-12 text-center">
-          <Loader className="animate-spin text-primary-600 mx-auto mb-4" size={48} />
-          <h3 className="text-xl font-semibold mb-2">Generating Your Post...</h3>
-          <p className="text-gray-600 dark:text-gray-400">
-            AI is creating amazing content for you. This may take a moment.
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-16 text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/40 dark:to-blue-900/40 mb-6">
+            <Loader className="animate-spin text-purple-600" size={36} />
+          </div>
+          <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Criando seu post...</h3>
+          <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+            A IA está gerando o texto e a imagem. Isso pode levar alguns instantes.
           </p>
+          <div className="flex justify-center gap-2 mt-6">
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }}
+              />
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Generated Post */}
+      {/* Generated post — two-column layout */}
       {post && !loading && (
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <img 
-              src={post.image_url} 
-              alt="Generated post"
-              className="w-full h-96 object-cover"
-            />
-            <div className="p-6">
-              <h3 className="text-lg font-semibold mb-3">Post Caption</h3>
-              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                {post.text}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex space-x-4">
-            <button
-              onClick={handlePublish}
-              disabled={publishing}
-              className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-            >
-              {publishing ? (
-                <>
-                  <Loader className="animate-spin" size={20} />
-                  <span>Publishing...</span>
-                </>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="flex flex-col md:flex-row">
+            {/* Left: Image */}
+            <div className="md:w-1/2 bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4 min-h-[300px]">
+              {imageUrl ? (
+                <div className="w-full aspect-square rounded-xl overflow-hidden shadow-md">
+                  <img
+                    src={imageUrl}
+                    alt="Post gerado"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               ) : (
-                <>
-                  <Send size={20} />
-                  <span>Publish to Instagram</span>
-                </>
+                <div className="w-full aspect-square rounded-xl bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                  <ImageIcon size={48} className="text-gray-400" />
+                </div>
               )}
-            </button>
-            <button
-              onClick={handleGenerate}
-              disabled={publishing}
-              className="px-6 py-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 flex items-center space-x-2"
-            >
-              <RefreshCw size={20} />
-              <span>Regenerate</span>
-            </button>
+            </div>
+
+            {/* Right: Caption + Actions */}
+            <div className="md:w-1/2 flex flex-col p-6 gap-4">
+              {/* Instagram-style header */}
+              <div className="flex items-center gap-3 pb-3 border-b border-gray-100 dark:border-gray-700">
+                {channel.suggested_image_url ? (
+                  <img
+                    src={channel.suggested_image_url}
+                    alt={channel.name}
+                    className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-600"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs font-bold">
+                    {channel.name?.[0]?.toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-white">{channel.name}</p>
+                  <p className="text-xs text-gray-400">Instagram</p>
+                </div>
+              </div>
+
+              {/* Caption */}
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Legenda</span>
+                  <button
+                    onClick={handleCopyCaption}
+                    className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 transition-colors"
+                  >
+                    {copied ? <CheckCheck size={13} /> : <Copy size={13} />}
+                    {copied ? 'Copiado!' : 'Copiar'}
+                  </button>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-xl p-4 max-h-56 overflow-y-auto">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                    {post.text}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex flex-col gap-2 pt-2">
+                {published ? (
+                  <div className="flex items-center justify-center gap-2 py-3 px-4 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-xl text-sm font-medium border border-green-200 dark:border-green-800">
+                    <CheckCheck size={16} />
+                    Post publicado com sucesso!
+                  </div>
+                ) : (
+                  <button
+                    onClick={handlePublish}
+                    disabled={publishing}
+                    className="flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-purple-200 dark:hover:shadow-purple-900/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {publishing ? (
+                      <>
+                        <Loader className="animate-spin" size={16} />
+                        Publicando...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={16} />
+                        Publicar no Instagram
+                      </>
+                    )}
+                  </button>
+                )}
+                <button
+                  onClick={handleGenerate}
+                  disabled={publishing}
+                  className="flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw size={15} />
+                  Gerar novamente
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
