@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { channelsAPI, videosAPI } from '../api';
-import { Loader, Sparkles, ArrowLeft, RefreshCw, Video, Play, Download, Clock, Maximize2 } from 'lucide-react';
+import {
+  Loader, Sparkles, ArrowLeft, RefreshCw, Video, Download,
+  Clock, Maximize2, Share2, CheckCircle, Copy,
+} from 'lucide-react';
 
 const DURATIONS = [
   { value: 4, label: '4s', desc: 'Rápido' },
@@ -26,6 +29,11 @@ const GenerateVideoPage = () => {
   const [seconds, setSeconds] = useState(4);
   const [size, setSize] = useState('720x1280');
   const [elapsed, setElapsed] = useState(0);
+  const [caption, setCaption] = useState('');
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [savingCaption, setSavingCaption] = useState(false);
 
   useEffect(() => { loadChannel(); }, [id]);
 
@@ -50,9 +58,12 @@ const GenerateVideoPage = () => {
   const handleGenerate = async () => {
     setLoading(true);
     setVideo(null);
+    setCaption('');
+    setPublished(false);
     try {
       const res = await videosAPI.generate(id, additionalPrompt, seconds, size);
       setVideo(res.data);
+      setCaption(res.data.caption || '');
     } catch (err) {
       alert('Erro ao gerar vídeo: ' + (err.response?.data?.detail || err.message));
     } finally {
@@ -67,6 +78,41 @@ const GenerateVideoPage = () => {
     a.download = `postgen-video-${video.id}.mp4`;
     a.target = '_blank';
     a.click();
+  };
+
+  const handleCopyCaption = () => {
+    navigator.clipboard.writeText(caption);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCaptionBlur = async () => {
+    if (!video || caption === video.caption) return;
+    try {
+      setSavingCaption(true);
+      await videosAPI.updateCaption(video.id, caption);
+    } catch (e) {
+      console.error('Caption save error', e);
+    } finally {
+      setSavingCaption(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!video) return;
+    try {
+      setPublishing(true);
+      // Save caption before publishing
+      if (caption !== video.caption) {
+        await videosAPI.updateCaption(video.id, caption);
+      }
+      await videosAPI.publish(video.id);
+      setPublished(true);
+    } catch (err) {
+      alert('Erro ao publicar: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setPublishing(false);
+    }
   };
 
   if (loadingChannel) {
@@ -91,26 +137,37 @@ const GenerateVideoPage = () => {
 
       {/* Channel header */}
       <div className="bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl p-6 text-white shadow-xl">
-        <div className="flex items-center gap-4">
-          {channel.suggested_image_url ? (
-            <img src={channel.suggested_image_url} alt={channel.name}
-              className="w-14 h-14 rounded-xl object-cover border-2 border-white/30 shadow-lg" />
-          ) : (
-            <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
-              <Video size={24} className="text-white/80" />
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            {channel.suggested_image_url ? (
+              <img src={channel.suggested_image_url} alt={channel.name}
+                className="w-14 h-14 rounded-xl object-cover border-2 border-white/30 shadow-lg" />
+            ) : (
+              <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+                <Video size={24} className="text-white/80" />
+              </div>
+            )}
+            <div>
+              <h1 className="text-xl font-bold">{channel.name}</h1>
+              <p className="text-violet-200 text-sm mt-0.5 flex items-center gap-1.5">
+                <Sparkles size={13} /> Gerador de vídeo com Sora
+              </p>
             </div>
-          )}
-          <div>
-            <h1 className="text-xl font-bold">{channel.name}</h1>
-            <p className="text-violet-200 text-sm mt-0.5 flex items-center gap-1.5">
-              <Sparkles size={13} /> Gerador de vídeo com Sora
-            </p>
           </div>
+          {video && !loading && (
+            <button
+              onClick={() => { setVideo(null); setCaption(''); setPublished(false); }}
+              className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-sm font-semibold transition-all"
+            >
+              <Video size={15} />
+              Gerar novo vídeo
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Config + prompt */}
-      {!loading && (
+      {/* Config panel — hidden once video is ready */}
+      {!loading && !video && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-5">
           {/* Duration */}
           <div>
@@ -119,10 +176,7 @@ const GenerateVideoPage = () => {
             </label>
             <div className="flex gap-2">
               {DURATIONS.map(d => (
-                <button
-                  key={d.value}
-                  type="button"
-                  onClick={() => setSeconds(d.value)}
+                <button key={d.value} type="button" onClick={() => setSeconds(d.value)}
                   className={`flex-1 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all ${
                     seconds === d.value
                       ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
@@ -143,10 +197,7 @@ const GenerateVideoPage = () => {
             </label>
             <div className="flex gap-2">
               {SIZES.map(s => (
-                <button
-                  key={s.value}
-                  type="button"
-                  onClick={() => setSize(s.value)}
+                <button key={s.value} type="button" onClick={() => setSize(s.value)}
                   className={`flex-1 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all ${
                     size === s.value
                       ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
@@ -179,7 +230,7 @@ const GenerateVideoPage = () => {
             className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all flex items-center justify-center gap-2"
           >
             <Video size={18} />
-            {video ? 'Gerar novo vídeo' : 'Gerar vídeo com Sora'}
+            Gerar vídeo com Sora
           </button>
         </div>
       )}
@@ -208,11 +259,11 @@ const GenerateVideoPage = () => {
         </div>
       )}
 
-      {/* Result */}
+      {/* Result — two-column layout like GeneratePostPage */}
       {video && !loading && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="flex flex-col md:flex-row">
-            {/* Video player */}
+            {/* Left: Video player */}
             <div className="md:w-1/2 bg-black flex items-center justify-center min-h-[300px]">
               {video.video_path ? (
                 <video
@@ -231,12 +282,12 @@ const GenerateVideoPage = () => {
               )}
             </div>
 
-            {/* Info + actions */}
+            {/* Right: Caption + actions */}
             <div className="md:w-1/2 flex flex-col p-6 gap-4">
-              {/* Header */}
+              {/* Channel header */}
               <div className="flex items-center gap-3 pb-3 border-b border-gray-100 dark:border-gray-700">
-                {channel.suggested_image_url ? (
-                  <img src={channel.suggested_image_url} alt={channel.name}
+                {channel.avatar_url ? (
+                  <img src={channel.avatar_url} alt={channel.name}
                     className="w-9 h-9 rounded-full object-cover border border-gray-200 dark:border-gray-600" />
                 ) : (
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
@@ -249,12 +300,32 @@ const GenerateVideoPage = () => {
                 </div>
               </div>
 
-              {/* Prompt used */}
-              <div className="flex-1">
-                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Prompt utilizado</span>
-                <div className="mt-2 bg-gray-50 dark:bg-gray-900 rounded-xl p-4 max-h-40 overflow-y-auto">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{video.prompt}</p>
+              {/* Caption editable */}
+              <div className="flex-1 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    Legenda do post
+                  </span>
+                  <button
+                    onClick={handleCopyCaption}
+                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-violet-600 transition-colors"
+                  >
+                    {copied ? <CheckCircle size={13} className="text-green-500" /> : <Copy size={13} />}
+                    {copied ? 'Copiado!' : 'Copiar'}
+                  </button>
                 </div>
+                <textarea
+                  value={caption}
+                  onChange={e => setCaption(e.target.value)}
+                  onBlur={handleCaptionBlur}
+                  className="flex-1 min-h-[180px] px-4 py-3 text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none leading-relaxed"
+                  placeholder="Legenda gerada aparecerá aqui..."
+                />
+                {savingCaption && (
+                  <p className="text-xs text-gray-400 flex items-center gap-1">
+                    <Loader size={11} className="animate-spin" /> Salvando...
+                  </p>
+                )}
               </div>
 
               {/* Tags */}
@@ -267,22 +338,42 @@ const GenerateVideoPage = () => {
                 </span>
               </div>
 
-              {/* Actions */}
+              {/* Action buttons */}
               <div className="flex flex-col gap-2 pt-2">
-                <button
-                  onClick={handleDownload}
-                  className="flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all"
-                >
-                  <Download size={16} />
-                  Baixar vídeo
-                </button>
-                <button
-                  onClick={handleGenerate}
-                  className="flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                >
-                  <RefreshCw size={15} />
-                  Gerar novamente
-                </button>
+                {published ? (
+                  <div className="flex items-center justify-center gap-2 py-3 px-4 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-xl text-sm font-semibold border border-green-200 dark:border-green-800">
+                    <CheckCircle size={16} />
+                    Publicado no Instagram!
+                  </div>
+                ) : (
+                  <button
+                    onClick={handlePublish}
+                    disabled={publishing}
+                    className="flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all disabled:opacity-60"
+                  >
+                    {publishing ? (
+                      <><Loader size={15} className="animate-spin" /> Publicando...</>
+                    ) : (
+                      <><Share2 size={15} /> Publicar no Instagram</>
+                    )}
+                  </button>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleDownload}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <Download size={15} />
+                    Baixar
+                  </button>
+                  <button
+                    onClick={handleGenerate}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <RefreshCw size={15} />
+                    Gerar novamente
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -97,6 +97,8 @@ export const videosAPI = {
       seconds,
       size,
     }),
+  updateCaption: (id, caption) => api.patch(`/videos/${id}/caption`, { caption }),
+  publish: (id) => api.post(`/videos/${id}/publish`),
   delete: (id) => api.delete(`/videos/${id}`),
 };
 
