@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { channelsAPI, postsAPI, postImageUrl } from '../api';
+import { channelsAPI, postsAPI } from '../api';
 import { Loader, Sparkles, Send, ArrowLeft, RefreshCw, Copy, CheckCheck, ImageIcon } from 'lucide-react';
 
 const GeneratePostPage = () => {
@@ -79,7 +79,7 @@ const GeneratePostPage = () => {
 
   if (!channel) return null;
 
-  const imageUrl = post ? (post.image_url?.startsWith('http') ? post.image_url : postImageUrl(post.image_url)) : null;
+  const imageUrl = post?.image_url || null;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
