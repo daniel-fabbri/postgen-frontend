@@ -1,5 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../AuthContext';
+import PublicHeader from '../components/PublicHeader';
 
 const Section = ({ title, children }) => (
   <div className="py-5 border-b border-gray-100 dark:border-gray-700 last:border-0">
@@ -10,8 +12,12 @@ const Section = ({ title, children }) => (
   </div>
 );
 
-const TermsPage = () => (
-  <div className="max-w-3xl mx-auto space-y-6">
+const TermsPage = () => {
+  const { user } = useAuth();
+  return (
+  <>
+    {!user && <PublicHeader />}
+  <div className={`max-w-3xl mx-auto space-y-6 ${!user ? 'pt-24 px-4 pb-12' : ''}`}>
     <div>
       <h1 className="text-3xl font-bold">Termos de Uso</h1>
       <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Última atualização: 26 de maio de 2026</p>
@@ -98,6 +104,8 @@ const TermsPage = () => (
       .
     </p>
   </div>
-);
+  </>
+  );
+};
 
 export default TermsPage;
