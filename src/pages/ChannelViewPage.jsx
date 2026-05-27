@@ -4,7 +4,7 @@ import { channelsAPI, postsAPI, avatarsAPI, videosAPI, postImageUrl } from '../a
 import {
   ArrowLeft, Edit2, Sparkles, X, Loader, Edit, Calendar,
   ChevronLeft, ChevronRight, Share2, Camera, Upload, Wand2,
-  Image as ImageIcon, Video, Download, Play, CheckCircle, Copy,
+  Image as ImageIcon, Video, Download, Play, CheckCircle, Copy, Instagram, Unlink, XCircle,
 } from 'lucide-react';
 
 const ChannelViewPage = () => {
@@ -33,6 +33,8 @@ const ChannelViewPage = () => {
   const [savingPost, setSavingPost] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [publishingVideo, setPublishingVideo] = useState(false);
+  const [connectingIG, setConnectingIG] = useState(false);
+  const [igMessage, setIgMessage] = useState(null);
   const [aiPrompt, setAiPrompt] = useState('');
   const [generatingAvatar, setGeneratingAvatar] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -76,6 +78,29 @@ const ChannelViewPage = () => {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConnectIG = async () => {
+    setConnectingIG(true);
+    setIgMessage(null);
+    try {
+      const res = await channelsAPI.getInstagramOAuthUrl(id);
+      window.location.href = res.data.url;
+    } catch (err) {
+      setIgMessage({ type: 'error', text: err.response?.data?.detail || 'Erro ao iniciar conexão com Instagram.' });
+      setConnectingIG(false);
+    }
+  };
+
+  const handleDisconnectIG = async () => {
+    if (!confirm('Desconectar o Instagram deste canal?')) return;
+    try {
+      await channelsAPI.disconnectInstagram(id);
+      setFormData(f => ({ ...f, instagram_user_id: '', instagram_access_token: '' }));
+      setIgMessage({ type: 'success', text: 'Instagram desconectado.' });
+    } catch (err) {
+      setIgMessage({ type: 'error', text: 'Erro ao desconectar.' });
     }
   };
 
@@ -462,22 +487,36 @@ const ChannelViewPage = () => {
                   </div>
                   <span className="text-sm font-semibold">Instagram</span>
                 </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Instagram User ID</label>
-                    <input type="text" value={formData.instagram_user_id}
-                      onChange={(e) => setFormData({ ...formData, instagram_user_id: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm font-mono"
-                      placeholder="ex: 17841400008460056" />
+
+                {igMessage && (
+                  <div className={`flex items-center gap-2 p-3 rounded-lg text-xs border mb-3 ${
+                    igMessage.type === 'success'
+                      ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+                      : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
+                  }`}>
+                    {igMessage.type === 'success' ? <CheckCircle size={13} /> : <XCircle size={13} />}
+                    <span>{igMessage.text}</span>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Access Token</label>
-                    <input type="password" value={formData.instagram_access_token}
-                      onChange={(e) => setFormData({ ...formData, instagram_access_token: e.target.value })}
-                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm font-mono"
-                      placeholder={formData.instagram_access_token === '***' ? '(salvo)' : 'EAAxxxxxxxxx...'} />
+                )}
+
+                {formData.instagram_user_id && formData.instagram_access_token ? (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                    <CheckCircle className="text-green-600 dark:text-green-400 shrink-0" size={15} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-green-800 dark:text-green-300">Conectado</p>
+                      <p className="text-xs text-green-700 dark:text-green-400 font-mono truncate">ID: {formData.instagram_user_id}</p>
+                    </div>
+                    <button type="button" onClick={handleDisconnectIG}
+                      className="flex items-center gap-1 px-2 py-1 rounded text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-700">
+                      <Unlink size={11} /> Desconectar
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  <button type="button" onClick={handleConnectIG} disabled={connectingIG}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 text-white text-sm font-semibold hover:shadow-lg transition-all disabled:opacity-50">
+                    {connectingIG ? <><Loader className="animate-spin" size={14} /> Redirecionando...</> : <><Instagram size={14} /> Conectar com Instagram</>}
+                  </button>
+                )}
               </div>
             </div>
             <div className="flex justify-end space-x-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">

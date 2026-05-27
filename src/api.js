@@ -53,6 +53,8 @@ export const channelsAPI = {
   delete: (id) => api.delete(`/channels/${id}`),
   updateAvatar: (id, avatarUrl) => api.patch(`/channels/${id}/avatar`, { avatar_url: avatarUrl }),
   testInstagram: (id, data) => api.post(`/channels/${id}/test-instagram`, data),
+  getInstagramOAuthUrl: (channelId) => api.get('/auth/instagram/authorize', { params: { channel_id: channelId } }),
+  disconnectInstagram: (id) => api.delete(`/channels/${id}/instagram`),
 };
 
 export const avatarsAPI = {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { channelsAPI } from '../api';
-import { Loader, Sparkles, ArrowLeft, Save, Wifi, CheckCircle, XCircle } from 'lucide-react';
+import { Loader, Sparkles, ArrowLeft, Save, Wifi, CheckCircle, XCircle, Instagram, Unlink } from 'lucide-react';
 
 const EditChannelPage = () => {
   const navigate = useNavigate();
@@ -17,10 +17,20 @@ const EditChannelPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [testingIG, setTestingIG] = useState(false);
-  const [igTestResult, setIgTestResult] = useState(null);
+  const [connectingIG, setConnectingIG] = useState(false);
+  const [igMessage, setIgMessage] = useState(null);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const igSuccess = params.get('ig_success');
+    const igError = params.get('ig_error');
+    if (igSuccess) {
+      setIgMessage({ type: 'success', text: `Instagram @${igSuccess} conectado com sucesso!` });
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (igError) {
+      setIgMessage({ type: 'error', text: `Erro ao conectar Instagram: ${igError}` });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
     loadChannel();
   }, [id]);
 
@@ -46,19 +56,26 @@ const EditChannelPage = () => {
     }
   };
 
-  const handleTestIG = async () => {
-    setTestingIG(true);
-    setIgTestResult(null);
+  const handleConnectIG = async () => {
+    setConnectingIG(true);
+    setIgMessage(null);
     try {
-      const res = await channelsAPI.testInstagram(id, {
-        instagram_user_id: formData.instagram_user_id,
-        instagram_access_token: formData.instagram_access_token,
-      });
-      setIgTestResult(res.data);
+      const res = await channelsAPI.getInstagramOAuthUrl(id);
+      window.location.href = res.data.url;
     } catch (err) {
-      setIgTestResult({ success: false, error: err.response?.data?.detail || 'Erro ao testar conexão.' });
-    } finally {
-      setTestingIG(false);
+      setIgMessage({ type: 'error', text: err.response?.data?.detail || 'Erro ao iniciar conexão com Instagram.' });
+      setConnectingIG(false);
+    }
+  };
+
+  const handleDisconnectIG = async () => {
+    if (!confirm('Desconectar o Instagram deste canal?')) return;
+    try {
+      await channelsAPI.disconnectInstagram(id);
+      setFormData(f => ({ ...f, instagram_user_id: '', instagram_access_token: '' }));
+      setIgMessage({ type: 'success', text: 'Instagram desconectado.' });
+    } catch (err) {
+      setIgMessage({ type: 'error', text: 'Erro ao desconectar.' });
     }
   };
 
@@ -188,83 +205,52 @@ const EditChannelPage = () => {
               <span className="font-semibold">Instagram</span>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Instagram User ID</label>
-                <input
-                  type="text"
-                  value={formData.instagram_user_id}
-                  onChange={(e) => setFormData({ ...formData, instagram_user_id: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none font-mono"
-                  placeholder="ex: 17841400008460056"
-                  disabled={saving}
-                />
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  ID numérico da conta Business/Creator. Meta Business Suite → Configurações → Ativos → Contas do Instagram.
-                </p>
+            {igMessage && (
+              <div className={`flex items-start gap-3 p-4 rounded-xl text-sm border mb-4 ${
+                igMessage.type === 'success'
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+                  : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
+              }`}>
+                {igMessage.type === 'success' ? <CheckCircle size={16} className="shrink-0 mt-0.5" /> : <XCircle size={16} className="shrink-0 mt-0.5" />}
+                <span>{igMessage.text}</span>
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Access Token</label>
-                <input
-                  type="password"
-                  value={formData.instagram_access_token}
-                  onChange={(e) => setFormData({ ...formData, instagram_access_token: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none font-mono"
-                  placeholder={formData.instagram_access_token === '***' ? '(salvo — deixe em branco para não alterar)' : 'EAAxxxxxxxxx...'}
-                  disabled={saving}
-                />
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Token de longa duração da Página do Facebook vinculada. Meta for Developers → Graph API Explorer.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleTestIG}
-                disabled={testingIG || saving || !formData.instagram_user_id}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {testingIG ? (
-                  <><Loader className="animate-spin" size={15} /> Testando...</>
-                ) : (
-                  <><Wifi size={15} /> Testar conexão</>
-                )}
-              </button>
-
-              {igTestResult && (
-                <div className={`flex items-start gap-3 p-4 rounded-xl text-sm border ${
-                  igTestResult.success
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
-                    : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
-                }`}>
-                  {igTestResult.success ? (
-                    <CheckCircle size={16} className="shrink-0 mt-0.5" />
-                  ) : (
-                    <XCircle size={16} className="shrink-0 mt-0.5" />
-                  )}
-                  <div>
-                    {igTestResult.success ? (
-                      <>
-                        <p className="font-semibold">Conexão bem-sucedida!</p>
-                        <p className="mt-0.5 text-green-700 dark:text-green-400">
-                          {igTestResult.account?.name && <span>{igTestResult.account.name}</span>}
-                          {igTestResult.account?.username && <span> · @{igTestResult.account.username}</span>}
-                          {igTestResult.account?.followers_count != null && (
-                            <span> · {igTestResult.account.followers_count.toLocaleString('pt-BR')} seguidores</span>
-                          )}
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="font-semibold">Falha na conexão</p>
-                        <p className="mt-0.5">{igTestResult.error}</p>
-                      </>
-                    )}
-                  </div>
+            {formData.instagram_user_id && formData.instagram_access_token && formData.instagram_access_token !== '' ? (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                <CheckCircle className="text-green-600 dark:text-green-400 shrink-0" size={20} />
+                <div className="flex-1">
+                  <p className="font-semibold text-green-800 dark:text-green-300">Instagram conectado</p>
+                  <p className="text-sm text-green-700 dark:text-green-400 font-mono">ID: {formData.instagram_user_id}</p>
                 </div>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={handleDisconnectIG}
+                  disabled={saving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-700 transition-colors"
+                >
+                  <Unlink size={14} /> Desconectar
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Conecte uma conta Instagram Professional (Criador ou Empresa) para publicar posts e reels diretamente.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleConnectIG}
+                  disabled={connectingIG || saving}
+                  className="flex items-center gap-2 px-5 py-3 rounded-lg bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {connectingIG ? (
+                    <><Loader className="animate-spin" size={16} /> Redirecionando...</>
+                  ) : (
+                    <><Instagram size={16} /> Conectar com Instagram</>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex space-x-4">
