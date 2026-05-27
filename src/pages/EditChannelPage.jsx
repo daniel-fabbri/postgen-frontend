@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { channelsAPI } from '../api';
-import { Loader, Sparkles, ArrowLeft, Save } from 'lucide-react';
+import { Loader, Sparkles, ArrowLeft, Save, Wifi, CheckCircle, XCircle } from 'lucide-react';
 
 const EditChannelPage = () => {
   const navigate = useNavigate();
@@ -17,6 +17,8 @@ const EditChannelPage = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [testingIG, setTestingIG] = useState(false);
+  const [igTestResult, setIgTestResult] = useState(null);
 
   useEffect(() => {
     loadChannel();
@@ -41,6 +43,22 @@ const EditChannelPage = () => {
       navigate('/channels');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTestIG = async () => {
+    setTestingIG(true);
+    setIgTestResult(null);
+    try {
+      const res = await channelsAPI.testInstagram(id, {
+        instagram_user_id: formData.instagram_user_id,
+        instagram_access_token: formData.instagram_access_token,
+      });
+      setIgTestResult(res.data);
+    } catch (err) {
+      setIgTestResult({ success: false, error: err.response?.data?.detail || 'Erro ao testar conexão.' });
+    } finally {
+      setTestingIG(false);
     }
   };
 
@@ -200,6 +218,52 @@ const EditChannelPage = () => {
                   Token de longa duração da Página do Facebook vinculada. Meta for Developers → Graph API Explorer.
                 </p>
               </div>
+
+              <button
+                type="button"
+                onClick={handleTestIG}
+                disabled={testingIG || saving || !formData.instagram_user_id}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {testingIG ? (
+                  <><Loader className="animate-spin" size={15} /> Testando...</>
+                ) : (
+                  <><Wifi size={15} /> Testar conexão</>
+                )}
+              </button>
+
+              {igTestResult && (
+                <div className={`flex items-start gap-3 p-4 rounded-xl text-sm border ${
+                  igTestResult.success
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300'
+                    : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300'
+                }`}>
+                  {igTestResult.success ? (
+                    <CheckCircle size={16} className="shrink-0 mt-0.5" />
+                  ) : (
+                    <XCircle size={16} className="shrink-0 mt-0.5" />
+                  )}
+                  <div>
+                    {igTestResult.success ? (
+                      <>
+                        <p className="font-semibold">Conexão bem-sucedida!</p>
+                        <p className="mt-0.5 text-green-700 dark:text-green-400">
+                          {igTestResult.account?.name && <span>{igTestResult.account.name}</span>}
+                          {igTestResult.account?.username && <span> · @{igTestResult.account.username}</span>}
+                          {igTestResult.account?.followers_count != null && (
+                            <span> · {igTestResult.account.followers_count.toLocaleString('pt-BR')} seguidores</span>
+                          )}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-semibold">Falha na conexão</p>
+                        <p className="mt-0.5">{igTestResult.error}</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
