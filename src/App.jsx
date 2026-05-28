@@ -10,6 +10,7 @@ import ChannelViewPage from './pages/ChannelViewPage';
 import GeneratePostPage from './pages/GeneratePostPage';
 import GenerateVideoPage from './pages/GenerateVideoPage';
 import VideoEditorPage from './pages/VideoEditorPage';
+import ChannelDashboardPage from './pages/ChannelDashboardPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import LoginPage from './pages/LoginPage';
@@ -119,6 +120,7 @@ function AppRoutes() {
           <Route path="/channels/:id/generate" element={<ProtectedRoute><GeneratePostPage /></ProtectedRoute>} />
           <Route path="/channels/:id/generate-video" element={<ProtectedRoute><GenerateVideoPage /></ProtectedRoute>} />
           <Route path="/video-editor/:projectId" element={<ProtectedRoute><VideoEditorPage /></ProtectedRoute>} />
+          <Route path="/channels/:id/dashboard" element={<ProtectedRoute><ChannelDashboardPage /></ProtectedRoute>} />
         </Routes>
       </main>
       <Footer />

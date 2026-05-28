@@ -114,4 +114,13 @@ export const videoProjectsAPI = {
   export: (id) => api.post(`/video-projects/${id}/export`),
 };
 
+export const insightsAPI = {
+  getPost: (postId) => api.get(`/posts/${postId}/insights`),
+  refreshPost: (postId) => api.post(`/posts/${postId}/insights/refresh`),
+  getVideo: (videoId) => api.get(`/videos/${videoId}/insights`),
+  refreshVideo: (videoId) => api.post(`/videos/${videoId}/insights/refresh`),
+  getChannelDashboard: (channelId) => api.get(`/channels/${channelId}/dashboard`),
+  refreshChannel: (channelId) => api.post(`/channels/${channelId}/insights/refresh`),
+};
+
 export default api;
