@@ -25,6 +25,7 @@ const ChannelViewPage = () => {
   const [editingPost, setEditingPost] = useState(null);
   const [editPostText, setEditPostText] = useState('');
   const [editPostImageUrl, setEditPostImageUrl] = useState('');
+  const [postImageHistory, setPostImageHistory] = useState([]);
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [imagePickerTab, setImagePickerTab] = useState('gallery');
   const [imageGenPrompt, setImageGenPrompt] = useState('');
@@ -131,6 +132,7 @@ const ChannelViewPage = () => {
     setEditingPost({ ...post });
     setEditPostText(post.text);
     setEditPostImageUrl(postImageUrl(post.image_path));
+    setPostImageHistory(post.image_path ? [post.image_path] : []);
     setShowImagePicker(false);
     setImagePickerTab('gallery');
     setImageGenPrompt('');
@@ -161,8 +163,10 @@ const ChannelViewPage = () => {
     try {
       setGeneratingPostImage(true);
       const response = await postsAPI.generateImage(editingPost.id, imageGenPrompt, id);
+      const newPath = response.data.image_path;
       setEditPostImageUrl(response.data.image_url);
-      setEditingPost(prev => ({ ...prev, image_path: response.data.image_path }));
+      setEditingPost(prev => ({ ...prev, image_path: newPath }));
+      setPostImageHistory(prev => [newPath, ...prev.filter(p => p !== newPath)]);
       setShowImagePicker(false);
     } catch (error) {
       alert('Erro ao gerar imagem: ' + (error.response?.data?.detail || error.message));
@@ -177,8 +181,10 @@ const ChannelViewPage = () => {
     try {
       setUploadingPostImage(true);
       const response = await postsAPI.uploadImage(editingPost.id, file);
+      const newPath = response.data.image_path;
       setEditPostImageUrl(response.data.image_url);
-      setEditingPost(prev => ({ ...prev, image_path: response.data.image_path }));
+      setEditingPost(prev => ({ ...prev, image_path: newPath }));
+      setPostImageHistory(prev => [newPath, ...prev.filter(p => p !== newPath)]);
       setShowImagePicker(false);
     } catch (error) {
       alert('Erro ao fazer upload da imagem');
@@ -212,9 +218,9 @@ const ChannelViewPage = () => {
     }
   };
 
-  const handleSelectPostImage = (post) => {
-    setEditPostImageUrl(postImageUrl(post.image_path));
-    setEditingPost(prev => ({ ...prev, image_path: post.image_path }));
+  const handleSelectHistoryImage = (imagePath) => {
+    setEditPostImageUrl(postImageUrl(imagePath));
+    setEditingPost(prev => ({ ...prev, image_path: imagePath }));
     setShowImagePicker(false);
   };
 
@@ -643,14 +649,18 @@ const ChannelViewPage = () => {
                     </div>
                     <div className="p-3 overflow-y-auto flex-1">
                       {imagePickerTab === 'gallery' && (
-                        <div className="grid grid-cols-2 gap-2">
-                          {posts.filter(p => p.image_path).map(p => (
-                            <button key={p.id} onClick={() => handleSelectPostImage(p)}
-                              className={`aspect-square overflow-hidden rounded-lg border-2 transition-all hover:border-blue-500 ${editingPost.image_path === p.image_path ? 'border-blue-500' : 'border-gray-200 dark:border-gray-700'}`}>
-                              <img src={postImageUrl(p.image_path)} alt="Post" className="w-full h-full object-cover" />
-                            </button>
-                          ))}
-                        </div>
+                        postImageHistory.length === 0 ? (
+                          <p className="text-xs text-gray-400 text-center py-4">Nenhuma imagem ainda.<br/>Gere ou faça upload de uma imagem.</p>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-2">
+                            {postImageHistory.map((imgPath, i) => (
+                              <button key={imgPath} onClick={() => handleSelectHistoryImage(imgPath)}
+                                className={`aspect-square overflow-hidden rounded-lg border-2 transition-all hover:border-blue-500 ${editingPost.image_path === imgPath ? 'border-blue-500' : 'border-gray-200 dark:border-gray-700'}`}>
+                                <img src={postImageUrl(imgPath)} alt={`Versão ${postImageHistory.length - i}`} className="w-full h-full object-cover" />
+                              </button>
+                            ))}
+                          </div>
+                        )
                       )}
                       {imagePickerTab === 'generate' && (
                         <div className="space-y-3">
