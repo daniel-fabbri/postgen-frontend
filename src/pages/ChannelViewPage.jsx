@@ -395,8 +395,14 @@ const ChannelViewPage = () => {
               >
                 {item._type === 'post' ? (
                   <div className="aspect-square overflow-hidden">
-                    <img src={postImageUrl(item.image_path)} alt="Post"
-                      className="w-full h-full object-cover" />
+                    {postImageUrl(item.image_path) ? (
+                      <img src={postImageUrl(item.image_path)} alt="Post"
+                        className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                        <ImageIcon size={40} className="text-gray-400 dark:text-gray-500" />
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="aspect-square bg-gradient-to-br from-violet-900 to-purple-900 flex items-center justify-center relative overflow-hidden">
