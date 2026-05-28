@@ -231,7 +231,8 @@ const ChannelViewPage = () => {
       await loadData();
       closeAvatarModal();
     } catch (error) {
-      alert('Erro ao atualizar avatar');
+      const detail = error.response?.data?.detail || error.message || 'Erro desconhecido';
+      alert('Erro ao atualizar avatar: ' + detail);
     }
   };
 
