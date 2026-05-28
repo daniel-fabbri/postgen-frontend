@@ -4,7 +4,7 @@ import { channelsAPI, postsAPI, avatarsAPI, videosAPI, videoProjectsAPI, postIma
 import {
   ArrowLeft, Edit2, Sparkles, X, Loader, Edit, Calendar,
   ChevronLeft, ChevronRight, Share2, Camera, Upload, Wand2,
-  Image as ImageIcon, Video, Download, Play, CheckCircle, Copy, Instagram, Unlink, XCircle, Info,
+  Image as ImageIcon, Video, Download, Play, CheckCircle, Copy, Instagram, Unlink, XCircle, Info, Plus,
 } from 'lucide-react';
 
 const ChannelViewPage = () => {
@@ -36,6 +36,8 @@ const ChannelViewPage = () => {
   const [publishingVideo, setPublishingVideo] = useState(false);
   const [editingVideo, setEditingVideo] = useState(false);
   const [showPromptFor, setShowPromptFor] = useState(null);
+  const [draggingVideoId, setDraggingVideoId] = useState(null);
+  const [dragOverVideoId, setDragOverVideoId] = useState(null);
   const [connectingIG, setConnectingIG] = useState(false);
   const [igMessage, setIgMessage] = useState(null);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -235,6 +237,54 @@ const ChannelViewPage = () => {
     }
   };
 
+  const handleVideoDragStart = (e, item) => {
+    setDraggingVideoId(item.id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleVideoDragEnd = () => {
+    setDraggingVideoId(null);
+    setDragOverVideoId(null);
+  };
+
+  const handleVideoDragOver = (e, item) => {
+    if (!draggingVideoId || draggingVideoId === item.id) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverVideoId(item.id);
+  };
+
+  const handleVideoDragLeave = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragOverVideoId(null);
+    }
+  };
+
+  const handleVideoDrop = async (e, targetItem) => {
+    e.preventDefault();
+    const draggedId = draggingVideoId;
+    setDraggingVideoId(null);
+    setDragOverVideoId(null);
+    if (!draggedId || draggedId === targetItem.id) return;
+
+    try {
+      setEditingVideo(true);
+      let projectId;
+      if (targetItem.video_project_id) {
+        const res = await videoProjectsAPI.addVideo(targetItem.video_project_id, draggedId);
+        projectId = res.data.id;
+      } else {
+        const createRes = await videoProjectsAPI.create(id, targetItem.id);
+        projectId = createRes.data.id;
+        await videoProjectsAPI.addVideo(projectId, draggedId);
+      }
+      navigate(`/video-editor/${projectId}`);
+    } catch (err) {
+      alert('Erro ao combinar vídeos: ' + (err.response?.data?.detail || err.message));
+      setEditingVideo(false);
+    }
+  };
+
   const handleSelectHistoryImage = (imagePath) => {
     setEditPostImageUrl(postImageUrl(imagePath));
     setEditingPost(prev => ({ ...prev, image_path: imagePath }));
@@ -413,7 +463,19 @@ const ChannelViewPage = () => {
               <div
                 key={item.id}
                 onClick={() => openGallery(index)}
-                className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+                draggable={item._type === 'video' && !item.video_project_id}
+                onDragStart={item._type === 'video' ? (e) => handleVideoDragStart(e, item) : undefined}
+                onDragEnd={item._type === 'video' ? handleVideoDragEnd : undefined}
+                onDragOver={item._type === 'video' ? (e) => handleVideoDragOver(e, item) : undefined}
+                onDragLeave={item._type === 'video' ? handleVideoDragLeave : undefined}
+                onDrop={item._type === 'video' ? (e) => handleVideoDrop(e, item) : undefined}
+                className={`relative bg-gray-50 dark:bg-gray-900 rounded-lg border overflow-hidden hover:shadow-lg transition-all cursor-pointer hover:scale-105 ${
+                  draggingVideoId === item.id
+                    ? 'opacity-40 scale-95 border-gray-200 dark:border-gray-700'
+                    : dragOverVideoId === item.id
+                    ? 'border-purple-500 ring-2 ring-purple-500 ring-offset-2 scale-105'
+                    : 'border-gray-200 dark:border-gray-700'
+                }`}
               >
                 {item._type === 'post' ? (
                   <div className="aspect-square overflow-hidden relative">
@@ -474,6 +536,14 @@ const ChannelViewPage = () => {
                           className="mt-2 self-end text-gray-400 hover:text-white transition-colors">
                           <X size={14} />
                         </button>
+                      </div>
+                    )}
+                    {dragOverVideoId === item.id && draggingVideoId && draggingVideoId !== item.id && (
+                      <div className="absolute inset-0 bg-purple-600/70 backdrop-blur-sm z-30 flex flex-col items-center justify-center pointer-events-none rounded-lg">
+                        <div className="w-12 h-12 rounded-full bg-white/30 flex items-center justify-center mb-2">
+                          <Plus size={24} className="text-white" />
+                        </div>
+                        <p className="text-white font-semibold text-sm">Soltar para combinar</p>
                       </div>
                     )}
                   </div>

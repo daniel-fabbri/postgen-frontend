@@ -108,6 +108,7 @@ export const videoProjectsAPI = {
   create: (channelId, videoId) => api.post('/video-projects', { channel_id: channelId, video_id: videoId }),
   get: (id) => api.get(`/video-projects/${id}`),
   updateClips: (id, clipIds) => api.put(`/video-projects/${id}/clips`, { clip_ids: clipIds }),
+  addVideo: (id, videoId) => api.post(`/video-projects/${id}/add-video`, { video_id: videoId }),
   generateClip: (id, data) => api.post(`/video-projects/${id}/generate`, data),
   save: (id) => api.post(`/video-projects/${id}/save`),
   export: (id) => api.post(`/video-projects/${id}/export`),
