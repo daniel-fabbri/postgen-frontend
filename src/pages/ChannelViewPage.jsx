@@ -4,7 +4,7 @@ import { channelsAPI, postsAPI, avatarsAPI, videosAPI, videoProjectsAPI, postIma
 import {
   ArrowLeft, Edit2, Sparkles, X, Loader, Edit, Calendar,
   ChevronLeft, ChevronRight, Share2, Camera, Upload, Wand2,
-  Image as ImageIcon, Video, Download, Play, CheckCircle, Copy, Instagram, Unlink, XCircle,
+  Image as ImageIcon, Video, Download, Play, CheckCircle, Copy, Instagram, Unlink, XCircle, Info,
 } from 'lucide-react';
 
 const ChannelViewPage = () => {
@@ -35,6 +35,7 @@ const ChannelViewPage = () => {
   const [publishing, setPublishing] = useState(false);
   const [publishingVideo, setPublishingVideo] = useState(false);
   const [editingVideo, setEditingVideo] = useState(false);
+  const [showPromptFor, setShowPromptFor] = useState(null);
   const [connectingIG, setConnectingIG] = useState(false);
   const [igMessage, setIgMessage] = useState(null);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -222,6 +223,10 @@ const ChannelViewPage = () => {
   const handleEditVideo = async (video) => {
     try {
       setEditingVideo(true);
+      if (video.video_project_id) {
+        navigate(`/video-editor/${video.video_project_id}`);
+        return;
+      }
       const res = await videoProjectsAPI.create(id, video.id);
       navigate(`/video-editor/${res.data.id}`);
     } catch (err) {
@@ -411,13 +416,32 @@ const ChannelViewPage = () => {
                 className="bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg transition-all cursor-pointer hover:scale-105"
               >
                 {item._type === 'post' ? (
-                  <div className="aspect-square overflow-hidden">
+                  <div className="aspect-square overflow-hidden relative">
                     {postImageUrl(item.image_path) ? (
                       <img src={postImageUrl(item.image_path)} alt="Post"
                         className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                         <ImageIcon size={40} className="text-gray-400 dark:text-gray-500" />
+                      </div>
+                    )}
+                    {item.prompt && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowPromptFor(showPromptFor === item.id ? null : item.id); }}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors z-10"
+                        title="Ver prompt"
+                      >
+                        <Info size={13} className="text-white" />
+                      </button>
+                    )}
+                    {showPromptFor === item.id && (
+                      <div className="absolute inset-0 bg-black/80 z-20 p-3 overflow-y-auto flex flex-col">
+                        <p className="text-purple-300 text-xs font-semibold uppercase mb-2">Prompt</p>
+                        <p className="text-white text-xs leading-relaxed whitespace-pre-wrap flex-1">{item.prompt}</p>
+                        <button onClick={(e) => { e.stopPropagation(); setShowPromptFor(null); }}
+                          className="mt-2 self-end text-gray-400 hover:text-white transition-colors">
+                          <X size={14} />
+                        </button>
                       </div>
                     )}
                   </div>
@@ -433,6 +457,25 @@ const ChannelViewPage = () => {
                         {item.duration_seconds}s · {item.size}
                       </span>
                     </div>
+                    {item.prompt && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setShowPromptFor(showPromptFor === item.id ? null : item.id); }}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors z-10"
+                        title="Ver prompt"
+                      >
+                        <Info size={13} className="text-white" />
+                      </button>
+                    )}
+                    {showPromptFor === item.id && (
+                      <div className="absolute inset-0 bg-black/80 z-20 p-3 overflow-y-auto flex flex-col">
+                        <p className="text-purple-300 text-xs font-semibold uppercase mb-2">Prompt</p>
+                        <p className="text-white text-xs leading-relaxed whitespace-pre-wrap flex-1">{item.prompt}</p>
+                        <button onClick={(e) => { e.stopPropagation(); setShowPromptFor(null); }}
+                          className="mt-2 self-end text-gray-400 hover:text-white transition-colors">
+                          <X size={14} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
                 <div className="p-4">
@@ -772,10 +815,21 @@ const ChannelViewPage = () => {
               </div>
 
               {/* Text */}
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
                   {currentItem._type === 'post' ? currentItem.text : (currentItem.caption || currentItem.prompt)}
                 </p>
+                {currentItem.prompt && (
+                  <details className="group">
+                    <summary className="text-xs font-medium text-gray-500 dark:text-gray-400 cursor-pointer hover:text-purple-600 dark:hover:text-purple-400 transition-colors select-none list-none flex items-center gap-1">
+                      <Info size={12} />
+                      <span>Ver prompt</span>
+                    </summary>
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 font-mono whitespace-pre-wrap leading-relaxed">
+                      {currentItem.prompt}
+                    </p>
+                  </details>
+                )}
               </div>
 
               {/* Footer actions */}

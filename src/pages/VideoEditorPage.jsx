@@ -3,19 +3,19 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { videoProjectsAPI } from '../api';
 import {
   ArrowLeft, Plus, Trash2, ChevronLeft, ChevronRight,
-  Loader, Wand2, Download, Play, Video, X,
+  Loader, Wand2, Save, Play, Video, X, Info, CheckCircle,
 } from 'lucide-react';
 
 const DURATIONS = [
-  { value: 4, label: '4s', desc: 'Rápido' },
-  { value: 8, label: '8s', desc: 'Padrão' },
-  { value: 12, label: '12s', desc: 'Longo' },
+  { value: 4, label: '4s' },
+  { value: 8, label: '8s' },
+  { value: 12, label: '12s' },
 ];
 
 const SIZES = [
-  { value: '720x1280', label: 'Vertical', desc: '9:16' },
-  { value: '1080x1920', label: 'Vertical HD', desc: '9:16' },
-  { value: '1080x1080', label: 'Quadrado', desc: '1:1' },
+  { value: '720x1280', label: 'Vertical' },
+  { value: '1080x1920', label: 'Vertical HD' },
+  { value: '1080x1080', label: 'Quadrado' },
 ];
 
 const VideoEditorPage = () => {
@@ -24,12 +24,13 @@ const VideoEditorPage = () => {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [exportedUrl, setExportedUrl] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [additionalPrompt, setAdditionalPrompt] = useState('');
   const [selectedDuration, setSelectedDuration] = useState(4);
   const [selectedSize, setSelectedSize] = useState('720x1280');
   const [previewClip, setPreviewClip] = useState(null);
+  const [promptOpenFor, setPromptOpenFor] = useState(null);
 
   useEffect(() => { loadProject(); }, [projectId]);
 
@@ -38,7 +39,6 @@ const VideoEditorPage = () => {
       setLoading(true);
       const res = await videoProjectsAPI.get(projectId);
       setProject(res.data);
-      if (res.data.exported_path) setExportedUrl(res.data.exported_path);
     } catch (err) {
       alert('Erro ao carregar projeto: ' + (err.response?.data?.detail || err.message));
     } finally {
@@ -54,6 +54,7 @@ const VideoEditorPage = () => {
     try {
       const res = await videoProjectsAPI.updateClips(projectId, clips.map(c => c.id));
       setProject(res.data);
+      setSaved(false);
     } catch (err) {
       alert('Erro ao reordenar: ' + (err.response?.data?.detail || err.message));
     }
@@ -66,7 +67,8 @@ const VideoEditorPage = () => {
       const res = await videoProjectsAPI.updateClips(projectId, newIds);
       setProject(res.data);
       if (previewClip?.id === clipId) setPreviewClip(null);
-      setExportedUrl(null);
+      if (promptOpenFor === clipId) setPromptOpenFor(null);
+      setSaved(false);
     } catch (err) {
       alert('Erro ao remover clipe: ' + (err.response?.data?.detail || err.message));
     }
@@ -82,7 +84,7 @@ const VideoEditorPage = () => {
       });
       setProject(res.data);
       setAdditionalPrompt('');
-      setExportedUrl(null);
+      setSaved(false);
     } catch (err) {
       alert('Erro ao gerar clipe: ' + (err.response?.data?.detail || err.message));
     } finally {
@@ -90,15 +92,16 @@ const VideoEditorPage = () => {
     }
   };
 
-  const handleExport = async () => {
+  const handleSave = async () => {
     try {
-      setExporting(true);
-      const res = await videoProjectsAPI.export(projectId);
-      setExportedUrl(res.data.exported_url);
+      setSaving(true);
+      const res = await videoProjectsAPI.save(projectId);
+      setProject(res.data);
+      setSaved(true);
     } catch (err) {
-      alert('Erro ao exportar: ' + (err.response?.data?.detail || err.message));
+      alert('Erro ao salvar edição: ' + (err.response?.data?.detail || err.message));
     } finally {
-      setExporting(false);
+      setSaving(false);
     }
   };
 
@@ -130,35 +133,35 @@ const VideoEditorPage = () => {
             {project.clips.length} clipe{project.clips.length !== 1 ? 's' : ''} · {totalDuration}s total
           </span>
           <button
-            onClick={handleExport}
-            disabled={exporting || project.clips.length === 0}
+            onClick={handleSave}
+            disabled={saving || project.clips.length === 0}
             className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-2 text-sm"
           >
-            {exporting
-              ? <><Loader className="animate-spin" size={14} /><span>Exportando...</span></>
-              : <><Download size={14} /><span>Exportar Vídeo</span></>}
+            {saving
+              ? <><Loader className="animate-spin" size={14} /><span>Salvando...</span></>
+              : <><Save size={14} /><span>Salvar Edição</span></>}
           </button>
         </div>
       </div>
 
       <h1 className="text-2xl font-bold">Editor de Vídeo</h1>
 
-      {/* Exported result */}
-      {exportedUrl && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="font-semibold text-green-800 dark:text-green-300">Vídeo exportado!</p>
-            <a
-              href={exportedUrl}
-              download="video_final.mp4"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
-            >
-              <Download size={14} /> Baixar
-            </a>
+      {/* Saved success banner */}
+      {saved && (
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CheckCircle size={20} className="text-green-600 dark:text-green-400 shrink-0" />
+            <div>
+              <p className="font-semibold text-green-800 dark:text-green-300">Edição salva!</p>
+              <p className="text-sm text-green-700 dark:text-green-400">O vídeo no canal foi atualizado com a timeline atual. Você pode continuar editando.</p>
+            </div>
           </div>
-          <video src={exportedUrl} controls className="w-full max-h-64 rounded-lg" />
+          <button
+            onClick={() => navigate(`/channels/${project.channel_id}`)}
+            className="shrink-0 px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+          >
+            Ver no canal
+          </button>
         </div>
       )}
 
@@ -177,6 +180,7 @@ const VideoEditorPage = () => {
                 key={clip.id}
                 className="flex-none w-44 bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
               >
+                {/* Thumbnail */}
                 <div
                   className="relative bg-gradient-to-br from-violet-900 to-purple-900 cursor-pointer"
                   style={{ aspectRatio: '9/16' }}
@@ -194,42 +198,47 @@ const VideoEditorPage = () => {
                       <Play size={18} className="text-white ml-0.5" />
                     </div>
                   </div>
+                  {/* Prompt icon */}
+                  {clip.prompt && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setPromptOpenFor(promptOpenFor === clip.id ? null : clip.id); }}
+                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-black/70 transition-colors z-10"
+                      title="Ver prompt"
+                    >
+                      <Info size={12} className="text-white" />
+                    </button>
+                  )}
                   <div className="absolute bottom-2 left-2 right-2 flex justify-between items-end">
-                    <span className="text-white text-xs bg-black/50 rounded px-1.5 py-0.5 font-medium">
-                      #{index + 1}
-                    </span>
-                    <span className="text-white text-xs bg-black/50 rounded px-1.5 py-0.5">
-                      {clip.duration_seconds}s
-                    </span>
+                    <span className="text-white text-xs bg-black/50 rounded px-1.5 py-0.5 font-medium">#{index + 1}</span>
+                    <span className="text-white text-xs bg-black/50 rounded px-1.5 py-0.5">{clip.duration_seconds}s</span>
                   </div>
                 </div>
+
+                {/* Prompt overlay */}
+                {promptOpenFor === clip.id && (
+                  <div className="bg-gray-900 text-gray-100 p-2 text-xs leading-relaxed max-h-32 overflow-y-auto">
+                    <p className="font-medium text-purple-300 mb-1 uppercase tracking-wide" style={{ fontSize: '10px' }}>Prompt</p>
+                    <p className="whitespace-pre-wrap">{clip.prompt}</p>
+                  </div>
+                )}
+
+                {/* Controls */}
                 <div className="p-2">
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate mb-2" title={clip.caption || clip.prompt}>
                     {clip.caption || clip.prompt || '—'}
                   </p>
                   <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleMoveClip(index, -1)}
-                      disabled={index === 0}
-                      title="Mover para esquerda"
-                      className="p-1 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-30"
-                    >
+                    <button onClick={() => handleMoveClip(index, -1)} disabled={index === 0} title="Mover para esquerda"
+                      className="p-1 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-30">
                       <ChevronLeft size={14} />
                     </button>
-                    <button
-                      onClick={() => handleMoveClip(index, 1)}
-                      disabled={index === project.clips.length - 1}
-                      title="Mover para direita"
-                      className="p-1 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-30"
-                    >
+                    <button onClick={() => handleMoveClip(index, 1)} disabled={index === project.clips.length - 1} title="Mover para direita"
+                      className="p-1 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-30">
                       <ChevronRight size={14} />
                     </button>
                     <div className="flex-1" />
-                    <button
-                      onClick={() => handleRemoveClip(clip.id)}
-                      title="Remover clipe"
-                      className="p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
-                    >
+                    <button onClick={() => handleRemoveClip(clip.id)} title="Remover clipe"
+                      className="p-1 rounded text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -244,19 +253,31 @@ const VideoEditorPage = () => {
       {previewClip && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold">Preview — Clipe #{project.clips.findIndex(c => c.id === previewClip.id) + 1}</h2>
+            <h2 className="text-lg font-bold">
+              Clipe #{project.clips.findIndex(c => c.id === previewClip.id) + 1}
+            </h2>
             <button onClick={() => setPreviewClip(null)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
               <X size={18} />
             </button>
           </div>
           <div className="flex gap-6 items-start flex-wrap">
             <video src={previewClip.video_path} controls autoPlay className="max-h-80 rounded-lg" />
-            <div className="flex-1 min-w-48">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Legenda</p>
-              <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
-                {previewClip.caption || previewClip.prompt || '—'}
-              </p>
-              <p className="text-xs text-gray-400 mt-4">{previewClip.duration_seconds}s · {previewClip.size}</p>
+            <div className="flex-1 min-w-48 space-y-4">
+              {previewClip.caption && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Legenda</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">{previewClip.caption}</p>
+                </div>
+              )}
+              {previewClip.prompt && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase mb-1">Prompt usado</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap leading-relaxed font-mono bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+                    {previewClip.prompt}
+                  </p>
+                </div>
+              )}
+              <p className="text-xs text-gray-400">{previewClip.duration_seconds}s · {previewClip.size}</p>
             </div>
           </div>
         </div>
@@ -287,16 +308,12 @@ const VideoEditorPage = () => {
               <label className="block text-sm font-medium mb-2">Duração</label>
               <div className="flex gap-2">
                 {DURATIONS.map(d => (
-                  <button
-                    key={d.value}
-                    onClick={() => setSelectedDuration(d.value)}
-                    disabled={generating}
+                  <button key={d.value} onClick={() => setSelectedDuration(d.value)} disabled={generating}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
                       selectedDuration === d.value
                         ? 'bg-purple-600 text-white border-purple-600'
                         : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-purple-400'
-                    } disabled:opacity-50`}
-                  >
+                    } disabled:opacity-50`}>
                     {d.label}
                   </button>
                 ))}
@@ -306,18 +323,13 @@ const VideoEditorPage = () => {
               <label className="block text-sm font-medium mb-2">Formato</label>
               <div className="flex gap-2 flex-wrap">
                 {SIZES.map(s => (
-                  <button
-                    key={s.value}
-                    onClick={() => setSelectedSize(s.value)}
-                    disabled={generating}
+                  <button key={s.value} onClick={() => setSelectedSize(s.value)} disabled={generating}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-all border ${
                       selectedSize === s.value
                         ? 'bg-purple-600 text-white border-purple-600'
                         : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-purple-400'
-                    } disabled:opacity-50`}
-                  >
-                    {s.label}
-                    <span className="ml-1 text-xs opacity-60">{s.desc}</span>
+                    } disabled:opacity-50`}>
+                    {s.value === '720x1280' ? 'Vertical' : s.value === '1080x1920' ? 'Vertical HD' : 'Quadrado'}
                   </button>
                 ))}
               </div>
