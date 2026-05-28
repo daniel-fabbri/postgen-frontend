@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { channelsAPI, postsAPI, avatarsAPI, videosAPI, postImageUrl } from '../api';
+import { channelsAPI, postsAPI, avatarsAPI, videosAPI, videoProjectsAPI, postImageUrl } from '../api';
 import {
   ArrowLeft, Edit2, Sparkles, X, Loader, Edit, Calendar,
   ChevronLeft, ChevronRight, Share2, Camera, Upload, Wand2,
@@ -34,6 +34,7 @@ const ChannelViewPage = () => {
   const [savingPost, setSavingPost] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [publishingVideo, setPublishingVideo] = useState(false);
+  const [editingVideo, setEditingVideo] = useState(false);
   const [connectingIG, setConnectingIG] = useState(false);
   const [igMessage, setIgMessage] = useState(null);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -215,6 +216,17 @@ const ChannelViewPage = () => {
       alert('Erro ao publicar vídeo: ' + (error.response?.data?.detail || error.message));
     } finally {
       setPublishingVideo(false);
+    }
+  };
+
+  const handleEditVideo = async (video) => {
+    try {
+      setEditingVideo(true);
+      const res = await videoProjectsAPI.create(id, video.id);
+      navigate(`/video-editor/${res.data.id}`);
+    } catch (err) {
+      alert('Erro ao abrir editor: ' + (err.response?.data?.detail || err.message));
+      setEditingVideo(false);
     }
   };
 
@@ -801,6 +813,10 @@ const ChannelViewPage = () => {
                         {publishingVideo ? <><Loader className="animate-spin" size={14} /><span>Publicando...</span></> : <><Share2 size={16} /><span>Publicar Reel</span></>}
                       </button>
                     )}
+                    <button onClick={(e) => { e.stopPropagation(); handleEditVideo(currentItem); }} disabled={editingVideo}
+                      className="w-full px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors flex items-center justify-center gap-2 text-sm font-medium disabled:opacity-50">
+                      {editingVideo ? <><Loader className="animate-spin" size={14} /><span>Abrindo...</span></> : <><Edit size={16} /><span>Editar</span></>}
+                    </button>
                     <button onClick={(e) => { e.stopPropagation(); const a = document.createElement('a'); a.href = currentItem.video_path; a.download = `${currentItem.id}.mp4`; a.target = '_blank'; a.click(); }}
                       className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
                       <Download size={16} /> Baixar vídeo

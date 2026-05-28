@@ -104,4 +104,12 @@ export const videosAPI = {
   delete: (id) => api.delete(`/videos/${id}`),
 };
 
+export const videoProjectsAPI = {
+  create: (channelId, videoId) => api.post('/video-projects', { channel_id: channelId, video_id: videoId }),
+  get: (id) => api.get(`/video-projects/${id}`),
+  updateClips: (id, clipIds) => api.put(`/video-projects/${id}/clips`, { clip_ids: clipIds }),
+  generateClip: (id, data) => api.post(`/video-projects/${id}/generate`, data),
+  export: (id) => api.post(`/video-projects/${id}/export`),
+};
+
 export default api;
