@@ -199,8 +199,13 @@ const ChannelDashboardPage = () => {
           color="bg-violet-500" />
         <StatCard icon={Zap} label="Interações" value={fmt(data?.total_interactions)}
           sub="curtidas + comentários + saves" color="bg-pink-500" />
-        <StatCard icon={TrendingUp} label="Taxa de engajamento" value={fmtRate(data?.avg_engagement_rate)}
-          sub="média por post" color="bg-emerald-500" />
+        <StatCard
+          icon={TrendingUp}
+          label={data?.avg_engagement_rate != null ? "Taxa de engajamento" : "Interações totais"}
+          value={data?.avg_engagement_rate != null ? fmtRate(data.avg_engagement_rate) : fmt(data?.total_interactions)}
+          sub={data?.avg_engagement_rate != null ? "média por post" : "curtidas + comentários + saves"}
+          color="bg-emerald-500"
+        />
       </div>
 
       {!hasData ? (
@@ -218,26 +223,25 @@ const ChannelDashboardPage = () => {
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
           <LeaderboardCard
-            title="Top por Alcance"
-            icon={Users}
-            items={data.top_by_reach}
-            valueKey="reach"
-            valueLabel="pessoas alcançadas"
-          />
-          <LeaderboardCard
-            title="Top por Engajamento"
-            icon={TrendingUp}
-            items={data.top_by_engagement}
-            valueKey="engagement_rate"
-            valueLabel="taxa de engajamento"
-            formatter={fmtRate}
-          />
-          <LeaderboardCard
             title="Top por Curtidas"
             icon={Heart}
             items={data.top_by_likes}
             valueKey="like_count"
             valueLabel="curtidas"
+          />
+          <LeaderboardCard
+            title="Top por Comentários"
+            icon={MessageCircle}
+            items={data.top_by_comments}
+            valueKey="comments_count"
+            valueLabel="comentários"
+          />
+          <LeaderboardCard
+            title="Top por Alcance"
+            icon={Users}
+            items={data.top_by_reach}
+            valueKey="reach"
+            valueLabel="pessoas alcançadas"
           />
         </div>
       )}
