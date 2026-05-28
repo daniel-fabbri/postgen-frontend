@@ -590,8 +590,8 @@ const ChannelViewPage = () => {
                 <div className="space-y-4 max-w-2xl mx-auto">
                   <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} rows="6"
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Descreva o avatar que deseja gerar..." />
-                  <button onClick={generateNewAvatar} disabled={generatingAvatar || !aiPrompt.trim()}
+                    placeholder="Detalhe adicional (o prompt do canal já é aplicado automaticamente)..." />
+                  <button onClick={generateNewAvatar} disabled={generatingAvatar}
                     className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center space-x-2">
                     {generatingAvatar ? <><Loader className="animate-spin" size={20} /><span>Gerando...</span></> : <><Wand2 size={20} /><span>Gerar Avatar</span></>}
                   </button>
