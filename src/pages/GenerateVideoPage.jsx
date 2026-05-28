@@ -9,7 +9,7 @@ import {
 const DURATIONS = [
   { value: 4, label: '4s', desc: 'Rápido' },
   { value: 8, label: '8s', desc: 'Padrão' },
-  { value: 16, label: '16s', desc: 'Longo' },
+  { value: 12, label: '12s', desc: 'Longo' },
 ];
 
 const SIZES = [
