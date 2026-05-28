@@ -657,7 +657,7 @@ const ChannelViewPage = () => {
                         <div className="space-y-3">
                           <textarea value={imageGenPrompt} onChange={(e) => setImageGenPrompt(e.target.value)} rows="4"
                             className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 resize-none"
-                            placeholder="Descreva a imagem..." />
+                            placeholder="Detalhe adicional (o prompt do canal já é aplicado automaticamente)..." />
                           <button onClick={handleGeneratePostImage} disabled={generatingPostImage || !imageGenPrompt.trim()}
                             className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 rounded-lg text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
                             {generatingPostImage ? <><Loader className="animate-spin" size={14} /><span>Gerando...</span></> : <><Wand2 size={14} /><span>Gerar</span></>}

@@ -51,7 +51,7 @@ export const channelsAPI = {
   create: (data) => api.post('/channels', data),
   update: (id, data) => api.put(`/channels/${id}`, data),
   delete: (id) => api.delete(`/channels/${id}`),
-  updateAvatar: (id, avatarUrl) => api.patch(`/channels/${id}/avatar`, { avatar_url: avatarUrl }),
+  updateAvatar: (id, avatarUrl) => api.post(`/channels/${id}/avatar`, { avatar_url: avatarUrl }),
   testInstagram: (id, data) => api.post(`/channels/${id}/test-instagram`, data),
   getInstagramOAuthUrl: (channelId) => api.get('/auth/instagram/authorize', { params: { channel_id: channelId } }),
   disconnectInstagram: (id) => api.delete(`/channels/${id}/instagram`),
@@ -78,7 +78,7 @@ export const postsAPI = {
     additional_prompt: additionalPrompt || null,
   }),
   publishPost: (postId) => api.post(`/posts/${postId}/publish`),
-  update: (id, text, imagePath) => api.patch(`/posts/${id}`, { text, image_path: imagePath }),
+  update: (id, text, imagePath) => api.post(`/posts/${id}/save`, { text, image_path: imagePath }),
   uploadImage: (id, file) => {
     const formData = new FormData();
     formData.append('file', file);
