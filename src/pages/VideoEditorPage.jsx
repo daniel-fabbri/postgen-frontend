@@ -6,7 +6,7 @@ import {
   Loader, Wand2, Save, Play, Video, X, Info, CheckCircle,
 } from 'lucide-react';
 import { useAuth } from '../AuthContext';
-import NoCreditsAlert from '../components/NoCreditsAlert';
+import CreditGate from '../components/CreditGate';
 
 const DURATIONS = [
   { value: 4, label: '4s' },
@@ -23,7 +23,7 @@ const SIZES = [
 const VideoEditorPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const balance = user?.credits_balance || 0;
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -91,6 +91,7 @@ const VideoEditorPage = () => {
       setProject(res.data);
       setAdditionalPrompt('');
       setSaved(false);
+      await refreshUser();
     } catch (err) {
       alert('Erro ao gerar clipe: ' + (err.response?.data?.detail || err.message));
     } finally {
@@ -341,16 +342,17 @@ const VideoEditorPage = () => {
               </div>
             </div>
           </div>
-          {!hasCredits && <NoCreditsAlert needed={costForClip} />}
-          <button
-            onClick={handleGenerateClip}
-            disabled={generating || !hasCredits}
-            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          >
+          <CreditGate blocked={!hasCredits} needed={costForClip} className="w-full">
+            <button
+              onClick={handleGenerateClip}
+              disabled={generating}
+              className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
             {generating
               ? <><Loader className="animate-spin" size={18} /><span>Gerando com Sora... (alguns minutos)</span></>
               : <><Wand2 size={18} /><span>Gerar Clipe com Sora</span></>}
-          </button>
+            </button>
+          </CreditGate>
         </div>
       </div>
     </div>

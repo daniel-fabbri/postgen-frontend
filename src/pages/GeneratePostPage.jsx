@@ -3,14 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { channelsAPI, postsAPI } from '../api';
 import { Loader, Sparkles, Send, ArrowLeft, RefreshCw, Copy, CheckCheck, ImageIcon } from 'lucide-react';
 import { useAuth } from '../AuthContext';
-import NoCreditsAlert from '../components/NoCreditsAlert';
+import CreditGate from '../components/CreditGate';
 
 const GeneratePostPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const balance = user?.credits_balance || 0;
-  const POST_MIN_CREDITS = 32; // texto (~2) + imagem MAI (~30)
+  const POST_MIN_CREDITS = 32;
   const hasCredits = balance >= POST_MIN_CREDITS;
   const [channel, setChannel] = useState(null);
   const [post, setPost] = useState(null);
@@ -45,6 +45,7 @@ const GeneratePostPage = () => {
       setPublished(false);
       const response = await postsAPI.generate(id, additionalPrompt);
       setPost(response.data);
+      await refreshUser();
     } catch (error) {
       console.error('Error generating post:', error);
       alert('Erro ao gerar post. Verifique as configurações do Azure OpenAI.');
@@ -122,7 +123,6 @@ const GeneratePostPage = () => {
       {/* Prompt input — always visible */}
       {!loading && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          {!hasCredits && <NoCreditsAlert needed={POST_MIN_CREDITS} />}
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Contexto adicional <span className="font-normal text-gray-400">(opcional)</span>
           </label>
@@ -133,14 +133,16 @@ const GeneratePostPage = () => {
             className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-sm"
             rows={3}
           />
-          <button
-            onClick={handleGenerate}
-            disabled={loading || !hasCredits}
-            className="mt-4 w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-200 dark:hover:shadow-purple-900/30 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <Sparkles size={18} />
-            {post ? 'Gerar novo post' : 'Gerar post com IA'}
-          </button>
+          <CreditGate blocked={!hasCredits} needed={POST_MIN_CREDITS} className="mt-4 w-full">
+            <button
+              onClick={handleGenerate}
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-200 dark:hover:shadow-purple-900/30 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <Sparkles size={18} />
+              {post ? 'Gerar novo post' : 'Gerar post com IA'}
+            </button>
+          </CreditGate>
         </div>
       )}
 

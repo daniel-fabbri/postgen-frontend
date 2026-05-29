@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { channelsAPI, postsAPI, avatarsAPI, videosAPI, videoProjectsAPI, insightsAPI, referencesAPI, postImageUrl } from '../api';
 import { useAuth } from '../AuthContext';
 import NoCreditsAlert from '../components/NoCreditsAlert';
+import CreditGate from '../components/CreditGate';
 import {
   ArrowLeft, Edit2, Sparkles, X, Loader, Edit, Calendar,
   ChevronLeft, ChevronRight, Share2, Camera, Upload, Wand2,
@@ -13,12 +14,12 @@ import {
 const ChannelViewPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const balance = user?.credits_balance || 0;
-  const canPost    = balance >= 32;  // texto ~2 + imagem ~30
-  const canVideo   = balance >= 200; // mínimo 4s × 50cr
-  const canAvatar  = balance >= 30;  // 1 imagem MAI
-  const canImage   = balance >= 30;  // 1 imagem MAI
+  const canPost    = balance >= 32;
+  const canVideo   = balance >= 200;
+  const canAvatar  = balance >= 30;
+  const canImage   = balance >= 30;
   const [channel, setChannel] = useState(null);
   const [posts, setPosts] = useState([]);
   const [videos, setVideos] = useState([]);
@@ -200,6 +201,7 @@ const ChannelViewPage = () => {
       setEditingPost(prev => ({ ...prev, image_path: newPath }));
       setPostImageHistory(prev => [newPath, ...prev.filter(p => p !== newPath)]);
       setShowImagePicker(false);
+      await refreshUser();
     } catch (error) {
       alert('Erro ao gerar imagem: ' + (error.response?.data?.detail || error.message));
     } finally {
@@ -342,6 +344,7 @@ const ChannelViewPage = () => {
       setGeneratingAvatar(true);
       await avatarsAPI.generate(aiPrompt, id);
       await loadData();
+      await refreshUser();
       closeAvatarModal();
     } catch (error) {
       alert('Erro ao gerar avatar: ' + (error.response?.data?.detail || error.message));
@@ -440,22 +443,22 @@ const ChannelViewPage = () => {
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold">{channel.name}</h1>
             <div className="flex items-center space-x-3">
-              <button
-                onClick={() => canVideo && navigate(`/channels/${id}/generate-video`)}
-                disabled={!canVideo}
-                title={!canVideo ? `Requer ~200 créditos (vídeo 4s mínimo). Saldo: ${Math.round(balance)}` : undefined}
-                className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none">
-                <Video size={16} />
-                <span>Gerar Vídeo</span>
-              </button>
-              <button
-                onClick={() => canPost && navigate(`/channels/${id}/generate`)}
-                disabled={!canPost}
-                title={!canPost ? `Requer ~32 créditos. Saldo: ${Math.round(balance)}` : undefined}
-                className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none">
-                <Sparkles size={16} />
-                <span>Gerar Post</span>
-              </button>
+              <CreditGate blocked={!canVideo} needed={200}>
+                <button
+                  onClick={() => navigate(`/channels/${id}/generate-video`)}
+                  className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2">
+                  <Video size={16} />
+                  <span>Gerar Vídeo</span>
+                </button>
+              </CreditGate>
+              <CreditGate blocked={!canPost} needed={32}>
+                <button
+                  onClick={() => navigate(`/channels/${id}/generate`)}
+                  className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2">
+                  <Sparkles size={16} />
+                  <span>Gerar Post</span>
+                </button>
+              </CreditGate>
               
               {/* Dropdown do Canal */}
               <div className="relative" ref={channelDropdownRef}>
@@ -955,11 +958,12 @@ const ChannelViewPage = () => {
                   <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} rows="6"
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Detalhe adicional (o prompt do canal já é aplicado automaticamente)..." />
-                  {!canAvatar && <NoCreditsAlert needed={30} />}
-                  <button onClick={generateNewAvatar} disabled={generatingAvatar || !canAvatar}
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center space-x-2">
-                    {generatingAvatar ? <><Loader className="animate-spin" size={20} /><span>Gerando...</span></> : <><Wand2 size={20} /><span>Gerar Avatar</span></>}
-                  </button>
+                  <CreditGate blocked={!canAvatar} needed={30} className="w-full">
+                    <button onClick={generateNewAvatar} disabled={generatingAvatar}
+                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center space-x-2">
+                      {generatingAvatar ? <><Loader className="animate-spin" size={20} /><span>Gerando...</span></> : <><Wand2 size={20} /><span>Gerar Avatar</span></>}
+                    </button>
+                  </CreditGate>
                 </div>
               )}
               {avatarTab === 'upload' && (
@@ -1026,11 +1030,12 @@ const ChannelViewPage = () => {
                           <textarea value={imageGenPrompt} onChange={(e) => setImageGenPrompt(e.target.value)} rows="4"
                             className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 resize-none"
                             placeholder="Detalhe adicional (o prompt do canal já é aplicado automaticamente)..." />
-                          {!canImage && <NoCreditsAlert needed={30} />}
-                          <button onClick={handleGeneratePostImage} disabled={generatingPostImage || !canImage}
-                            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 rounded-lg text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
-                            {generatingPostImage ? <><Loader className="animate-spin" size={14} /><span>Gerando...</span></> : <><Wand2 size={14} /><span>Gerar</span></>}
-                          </button>
+                          <CreditGate blocked={!canImage} needed={30} className="w-full">
+                            <button onClick={handleGeneratePostImage} disabled={generatingPostImage}
+                              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 rounded-lg text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+                              {generatingPostImage ? <><Loader className="animate-spin" size={14} /><span>Gerando...</span></> : <><Wand2 size={14} /><span>Gerar</span></>}
+                            </button>
+                          </CreditGate>
                         </div>
                       )}
                       {imagePickerTab === 'upload' && (

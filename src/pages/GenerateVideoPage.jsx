@@ -6,7 +6,7 @@ import {
   Clock, Maximize2, Share2, CheckCircle, Copy,
 } from 'lucide-react';
 import { useAuth } from '../AuthContext';
-import NoCreditsAlert from '../components/NoCreditsAlert';
+import CreditGate from '../components/CreditGate';
 
 const DURATIONS = [
   { value: 4, label: '4s', desc: 'Rápido' },
@@ -23,9 +23,9 @@ const SIZES = [
 const GenerateVideoPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const balance = user?.credits_balance || 0;
-  const costForVideo = seconds * 50; // 50 créditos/segundo (Sora)
+  const costForVideo = seconds * 50;
   const hasCredits = balance >= costForVideo;
   const [channel, setChannel] = useState(null);
   const [video, setVideo] = useState(null);
@@ -70,6 +70,7 @@ const GenerateVideoPage = () => {
       const res = await videosAPI.generate(id, additionalPrompt, seconds, size);
       setVideo(res.data);
       setCaption(res.data.caption || '');
+      await refreshUser();
     } catch (err) {
       alert('Erro ao gerar vídeo: ' + (err.response?.data?.detail || err.message));
     } finally {
@@ -231,15 +232,15 @@ const GenerateVideoPage = () => {
             />
           </div>
 
-          {!hasCredits && <NoCreditsAlert needed={costForVideo} />}
-          <button
-            onClick={handleGenerate}
-            disabled={!hasCredits}
-            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <Video size={18} />
-            Gerar vídeo com Sora
-          </button>
+          <CreditGate blocked={!hasCredits} needed={costForVideo} className="w-full">
+            <button
+              onClick={handleGenerate}
+              className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all flex items-center justify-center gap-2"
+            >
+              <Video size={18} />
+              Gerar vídeo com Sora
+            </button>
+          </CreditGate>
         </div>
       )}
 
