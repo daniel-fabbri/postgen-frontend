@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { insightsAPI, postImageUrl } from '../api';
 import {
   ArrowLeft, RefreshCw, Loader, Heart, MessageCircle, Eye,
-  Bookmark, Share2, Play, TrendingUp, Users, BarChart2,
-  Zap, Video, Image as ImageIcon, AlertCircle,
+  Play, Image as ImageIcon, AlertCircle, Info, Users, TrendingUp,
 } from 'lucide-react';
 
 const fmt = (n) => {
@@ -28,18 +27,28 @@ const Bar = ({ value, max }) => {
   );
 };
 
-const StatCard = ({ icon: Icon, label, value, sub, color }) => (
-  <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 flex items-start gap-4">
-    <div className={`p-2.5 rounded-lg ${color}`}>
-      <Icon size={20} className="text-white" />
+const Tooltip = ({ text }) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative inline-flex items-center ml-1">
+      <button
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onFocus={() => setShow(true)}
+        onBlur={() => setShow(false)}
+        className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+        tabIndex={0}
+      >
+        <Info size={10} className="text-gray-500 dark:text-gray-300" />
+      </button>
+      {show && (
+        <div className="absolute left-5 top-0 z-50 w-56 p-2.5 bg-gray-900 text-gray-100 text-xs rounded-lg shadow-xl leading-relaxed pointer-events-none">
+          {text}
+        </div>
+      )}
     </div>
-    <div>
-      <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
-      <p className="text-2xl font-bold mt-0.5">{value}</p>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-    </div>
-  </div>
-);
+  );
+};
 
 const MediaThumb = ({ item }) => {
   if (item.media_type === 'video') {
@@ -64,38 +73,63 @@ const MediaThumb = ({ item }) => {
   );
 };
 
-const LeaderboardCard = ({ title, icon: Icon, items, valueKey, valueLabel, formatter = fmt }) => {
+const TOOLTIPS = {
+  likes: 'Número de curtidas que o post recebeu no Instagram.',
+  comments: 'Número de comentários deixados no post.',
+  reach: 'Contas únicas que viram o post pelo menos uma vez — cada pessoa conta apenas 1, independente de quantas vezes visualizou. Requer reconexão do Instagram para ativar.',
+  impressions: 'Total de visualizações, incluindo múltiplas do mesmo usuário. Sempre maior ou igual ao alcance. Requer reconexão do Instagram para ativar.',
+};
+
+const LeaderboardCard = ({ title, icon: Icon, items, valueKey, valueLabel, total, tooltipKey, formatter = fmt, emptyNote }) => {
   if (!items || items.length === 0) return null;
   const max = Math.max(...items.map(i => i.insights[valueKey] || 0));
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-      <h3 className="font-semibold mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-100">
-        <Icon size={16} className="text-purple-500" />
-        {title}
-      </h3>
-      <div className="space-y-3">
-        {items.map((item, idx) => (
-          <div key={item.media_id} className="flex items-center gap-3">
-            <span className="text-xs font-bold text-gray-400 w-4 shrink-0">#{idx + 1}</span>
-            <MediaThumb item={item} />
-            <div className="flex-1 min-w-0 space-y-1">
-              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{item.text_preview || '—'}</p>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">{formatter(item.insights[valueKey])}</span>
-                <span className="text-xs text-gray-400">{valueLabel}</span>
-                <Bar value={item.insights[valueKey] || 0} max={max} />
-              </div>
-            </div>
-            <span className={`shrink-0 text-xs px-1.5 py-0.5 rounded-full font-medium ${
-              item.media_type === 'video'
-                ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400'
-                : 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'
-            }`}>
-              {item.media_type === 'video' ? 'Vídeo' : 'Post'}
-            </span>
-          </div>
-        ))}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold flex items-center gap-1.5 text-gray-800 dark:text-gray-100">
+          <Icon size={16} className="text-purple-500 shrink-0" />
+          {title}
+          {tooltipKey && <Tooltip text={TOOLTIPS[tooltipKey]} />}
+        </h3>
+        {total != null && (
+          <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
+            {formatter(total)}
+            <span className="text-xs font-normal text-gray-400 ml-1">total</span>
+          </span>
+        )}
       </div>
+
+      {emptyNote && max === 0 ? (
+        <div className="flex items-start gap-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3">
+          <Info size={13} className="shrink-0 mt-0.5" />
+          <span>{emptyNote}</span>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {items.map((item, idx) => (
+            <div key={item.media_id} className="flex items-center gap-3">
+              <span className="text-xs font-bold text-gray-400 w-4 shrink-0">#{idx + 1}</span>
+              <MediaThumb item={item} />
+              <div className="flex-1 min-w-0 space-y-1">
+                <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{item.text_preview || '—'}</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">{formatter(item.insights[valueKey])}</span>
+                  <span className="text-xs text-gray-400">{valueLabel}</span>
+                  <Bar value={item.insights[valueKey] || 0} max={max} />
+                </div>
+              </div>
+              <span className={`shrink-0 text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                item.media_type === 'video'
+                  ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400'
+                  : 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'
+              }`}>
+                {item.media_type === 'video' ? 'Vídeo' : 'Post'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
@@ -158,7 +192,7 @@ const ChannelDashboardPage = () => {
     );
   }
 
-  const hasData = data && (data.top_by_reach.length > 0 || data.top_by_likes.length > 0);
+  const hasData = data && (data.top_by_likes.length > 0 || data.top_by_comments.length > 0);
 
   return (
     <div className="space-y-6">
@@ -188,46 +222,30 @@ const ChannelDashboardPage = () => {
 
       <div>
         <h1 className="text-2xl font-bold">Dashboard de Engajamento</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{data?.channel_name}</p>
-      </div>
-
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Users} label="Alcance total" value={fmt(data?.total_reach)}
-          sub={`${data?.published_count || 0} posts publicados`} color="bg-blue-500" />
-        <StatCard icon={Eye} label="Impressões" value={fmt(data?.total_impressions)}
-          color="bg-violet-500" />
-        <StatCard icon={Zap} label="Interações" value={fmt(data?.total_interactions)}
-          sub="curtidas + comentários + saves" color="bg-pink-500" />
-        <StatCard
-          icon={TrendingUp}
-          label={data?.avg_engagement_rate != null ? "Taxa de engajamento" : "Interações totais"}
-          value={data?.avg_engagement_rate != null ? fmtRate(data.avg_engagement_rate) : fmt(data?.total_interactions)}
-          sub={data?.avg_engagement_rate != null ? "média por post" : "curtidas + comentários + saves"}
-          color="bg-emerald-500"
-        />
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          {data?.channel_name} · {data?.published_count || 0} post{data?.published_count !== 1 ? 's' : ''} publicado{data?.published_count !== 1 ? 's' : ''}
+        </p>
       </div>
 
       {!hasData ? (
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
-          <BarChart2 size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
           <p className="font-semibold text-gray-600 dark:text-gray-400 mb-2">Nenhuma métrica disponível ainda</p>
-          <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
-            Publique posts no Instagram e clique em "Atualizar métricas" para carregar os dados.
-          </p>
+          <p className="text-sm text-gray-500 mb-4">Publique posts no Instagram e clique em "Atualizar métricas".</p>
           <button onClick={handleRefreshAll} disabled={refreshing}
             className="px-6 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg text-sm font-semibold hover:shadow-lg transition-all disabled:opacity-50 inline-flex items-center gap-2">
             <RefreshCw size={14} /><span>Buscar métricas agora</span>
           </button>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 xl:grid-cols-2 gap-6">
           <LeaderboardCard
             title="Top por Curtidas"
             icon={Heart}
             items={data.top_by_likes}
             valueKey="like_count"
             valueLabel="curtidas"
+            total={data.total_likes}
+            tooltipKey="likes"
           />
           <LeaderboardCard
             title="Top por Comentários"
@@ -235,13 +253,28 @@ const ChannelDashboardPage = () => {
             items={data.top_by_comments}
             valueKey="comments_count"
             valueLabel="comentários"
+            total={data.total_comments}
+            tooltipKey="comments"
           />
           <LeaderboardCard
             title="Top por Alcance"
             icon={Users}
             items={data.top_by_reach}
             valueKey="reach"
-            valueLabel="pessoas alcançadas"
+            valueLabel="contas únicas"
+            total={data.total_reach || null}
+            tooltipKey="reach"
+            emptyNote="Alcance é o número de contas únicas que viram o post. Para ativar, vá em Editar Canal → Desconectar Instagram → Reconectar. Isso atualiza o token com a permissão necessária."
+          />
+          <LeaderboardCard
+            title="Top por Impressões"
+            icon={Eye}
+            items={data.top_by_reach}
+            valueKey="impressions"
+            valueLabel="visualizações"
+            total={data.total_impressions || null}
+            tooltipKey="impressions"
+            emptyNote="Impressões é o total de visualizações (incluindo múltiplas do mesmo usuário). Sempre maior ou igual ao alcance. Requer a mesma reconexão do Instagram."
           />
         </div>
       )}
