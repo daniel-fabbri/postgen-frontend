@@ -77,6 +77,32 @@ const CreditsLogPage = () => {
     return labels[type] || type;
   };
 
+  const getUsageDisplay = (item) => {
+    // Para texto: mostra tokens
+    if (item.operation_type === 'text_generation' && item.total_tokens > 0) {
+      return item.total_tokens.toLocaleString() + ' tokens';
+    }
+    
+    // Para imagem: mostra quantidade de imagens
+    if (item.operation_type === 'image_generation') {
+      return '1 imagem';
+    }
+    
+    // Para vídeo: calcula segundos baseado no custo (50 créditos/segundo)
+    if (item.operation_type === 'video_generation') {
+      const seconds = Math.round(item.credits_consumed / 50);
+      return `${seconds}s vídeo`;
+    }
+    
+    // Para TTS: mostra caracteres (15 créditos por 1K chars)
+    if (item.operation_type === 'tts') {
+      const chars = Math.round((item.credits_consumed / 15) * 1000);
+      return `${chars} chars`;
+    }
+    
+    return '-';
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -241,7 +267,7 @@ const CreditsLogPage = () => {
                   Modelo
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Tokens
+                  Uso
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Créditos
@@ -269,7 +295,7 @@ const CreditsLogPage = () => {
                     {item.model_name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400">
-                    {item.total_tokens > 0 ? item.total_tokens.toLocaleString() : '-'}
+                    {getUsageDisplay(item)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-blue-600 dark:text-blue-400">
                     {item.credits_consumed.toFixed(4)}
