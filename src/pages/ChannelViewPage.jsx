@@ -55,6 +55,7 @@ const ChannelViewPage = () => {
     image_generation_prompt: '',
     instagram_user_id: '',
     instagram_access_token: '',
+    image_model: 'mai',
   });
 
   // Unified sorted feed: newest first
@@ -80,6 +81,7 @@ const ChannelViewPage = () => {
         image_generation_prompt: channelRes.data.image_generation_prompt || '',
         instagram_user_id: channelRes.data.instagram_user_id || '',
         instagram_access_token: channelRes.data.instagram_access_token || '',
+        image_model: channelRes.data.image_model || 'mai',
       });
       setPosts(postsRes.data.filter(p => p.channel_id === id));
       setVideos(videosRes.data);
@@ -658,6 +660,36 @@ const ChannelViewPage = () => {
                     <span>{igMessage.text}</span>
                   </div>
                 )}
+
+                {/* Image model selector */}
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <label className="block text-sm font-medium mb-2">Modelo de geração de imagem</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { value: 'mai', label: 'MAI-Image-2e', desc: 'Rápido, sem limite de requests. Indicado para volume.', badge: 'Padrão' },
+                      { value: 'gpt-image-2', label: 'gpt-image-2', desc: 'Alta qualidade. Usa a foto de referência diretamente (image-to-image).', badge: '2 req/min' },
+                    ].map(({ value, label, desc, badge }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setFormData(f => ({ ...f, image_model: value }))}
+                        className={`text-left p-3 rounded-lg border-2 transition-all ${
+                          formData.image_model === value
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold">{label}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                            value === 'mai' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
+                          }`}>{badge}</span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">{desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
                 {/* References section */}
                 <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
