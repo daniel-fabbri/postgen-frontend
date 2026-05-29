@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader, TrendingUp, Activity, DollarSign, Calendar, Filter, ShoppingCart, Wallet, TrendingDown, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Loader, TrendingUp, Activity, DollarSign, Calendar, Filter, ShoppingCart, Wallet, TrendingDown, CheckCircle, XCircle, Clock, CreditCard } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { paymentsAPI } from '../api';
 import { useAuth } from '../AuthContext';
@@ -105,7 +106,16 @@ const CreditsLogPage = () => {
       </button>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h1 className="text-3xl font-bold mb-6">Créditos</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">Créditos</h1>
+          <Link
+            to="/buy-credits"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all font-semibold shadow text-sm"
+          >
+            <CreditCard className="w-4 h-4" />
+            Comprar Créditos
+          </Link>
+        </div>
 
         {/* Balance cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">

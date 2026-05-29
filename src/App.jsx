@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { useTheme } from './ThemeContext';
 import { useAuth, AuthProvider } from './AuthContext';
 import { Moon, Sun, Sparkles, LogOut, User, DollarSign, UserCircle, Settings, Shield, ChevronDown, CreditCard } from 'lucide-react';
@@ -40,6 +40,7 @@ function Navigation() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   const [totalConsumed, setTotalConsumed] = useState(0);
+  const location = useLocation();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -60,7 +61,7 @@ function Navigation() {
       .then(r => r.json())
       .then(d => setTotalConsumed(d.total_credits || 0))
       .catch(() => {});
-  }, [user]);
+  }, [user, location.pathname]);
 
   if (!user) return null;
 
@@ -84,7 +85,7 @@ function Navigation() {
           <div className="flex items-center gap-3">
             {/* Botão de créditos */}
             <Link
-              to="/buy-credits"
+              to="/credits"
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105 font-semibold shadow-md"
             >
               <CreditCard className="w-4 h-4" />
