@@ -135,4 +135,14 @@ export const insightsAPI = {
   refreshChannel: (channelId) => api.post(`/channels/${channelId}/insights/refresh`),
 };
 
+export const paymentsAPI = {
+  create: (amount) => api.post('/payments/create', { amount }),
+  getStatus: (paymentId) => api.get(`/payments/${paymentId}`),
+};
+
+export const usersAPI = {
+  updateProfile: (data) => api.put('/users/profile', data),
+  getAll: () => api.get('/admin/users'),
+};
+
 export default api;

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { useTheme } from './ThemeContext';
 import { useAuth, AuthProvider } from './AuthContext';
-import { Moon, Sun, Sparkles, LogOut, User, DollarSign, UserCircle, Settings, Shield, ChevronDown } from 'lucide-react';
+import { Moon, Sun, Sparkles, LogOut, User, DollarSign, UserCircle, Settings, Shield, ChevronDown, CreditCard } from 'lucide-react';
 import ChannelsPage from './pages/ChannelsPage';
 import CreateChannelPage from './pages/CreateChannelPage';
 import EditChannelPage from './pages/EditChannelPage';
@@ -12,6 +12,7 @@ import GenerateVideoPage from './pages/GenerateVideoPage';
 import VideoEditorPage from './pages/VideoEditorPage';
 import ChannelDashboardPage from './pages/ChannelDashboardPage';
 import CreditsLogPage from './pages/CreditsLogPage';
+import BuyCreditsPage from './pages/BuyCreditsPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 import TermsPage from './pages/TermsPage';
@@ -70,6 +71,15 @@ function Navigation() {
             </Link>
           </div>
           <div className="flex items-center gap-3">
+            {/* Botão Comprar Créditos */}
+            <Link
+              to="/buy-credits"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105 font-semibold shadow-md"
+            >
+              <CreditCard className="w-4 h-4" />
+              <span className="hidden sm:inline">Comprar Créditos</span>
+            </Link>
+            
             {/* Dropdown de Perfil */}
             <div className="relative" ref={dropdownRef}>
               <button
@@ -198,6 +208,7 @@ function AppRoutes() {
           <Route path="/video-editor/:projectId" element={<ProtectedRoute><VideoEditorPage /></ProtectedRoute>} />
           <Route path="/channels/:id/dashboard" element={<ProtectedRoute><ChannelDashboardPage /></ProtectedRoute>} />
           <Route path="/credits" element={<ProtectedRoute><CreditsLogPage /></ProtectedRoute>} />
+          <Route path="/buy-credits" element={<ProtectedRoute><BuyCreditsPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
         </Routes>
