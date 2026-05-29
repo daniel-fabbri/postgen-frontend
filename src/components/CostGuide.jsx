@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Info, X, Video, Image, FileText, User, Mic } from 'lucide-react';
+import { Info, X, Video, FileText, User } from 'lucide-react';
 
 const COSTS = [
   {
@@ -31,15 +31,6 @@ const COSTS = [
     bg: 'bg-green-50 dark:bg-green-900/20',
     items: [
       { label: 'Geração de avatar com IA', cost: '~30', unit: 'créditos' },
-    ],
-  },
-  {
-    category: 'Áudio (TTS)',
-    icon: Mic,
-    color: 'text-orange-500',
-    bg: 'bg-orange-50 dark:bg-orange-900/20',
-    items: [
-      { label: 'Por 1.000 caracteres', cost: '~15', unit: 'créditos' },
     ],
   },
 ];

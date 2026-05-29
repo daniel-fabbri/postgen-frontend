@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   Sparkles, Zap, Image, Share2, Layers, Shield,
-  ArrowRight, CheckCircle, Instagram, Bot, Wand2
+  ArrowRight, CheckCircle, Instagram, Bot, Wand2, Gift
 } from 'lucide-react';
 import PublicHeader from '../components/PublicHeader';
 import PublicFooter from '../components/PublicFooter';
@@ -74,12 +74,12 @@ const steps = [
 ];
 
 const benefits = [
-  'Sem mensalidade por post gerado',
+  'Créditos grátis ao criar conta — sem cartão',
+  'Sem mensalidade, pague só pelo que usar',
   'Sem limite de canais',
   'Controle total sobre o conteúdo',
   'Integração direta com Instagram',
   'Imagens e textos no mesmo fluxo',
-  'Configuração única, uso contínuo',
 ];
 
 function MockPost() {
@@ -166,9 +166,15 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             {/* Left */}
             <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-sm font-medium px-4 py-1.5 rounded-full">
-                <Sparkles className="w-3.5 h-3.5" />
-                Powered by Azure OpenAI
+              <div className="flex flex-wrap gap-2">
+                <div className="inline-flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 text-sm font-medium px-4 py-1.5 rounded-full">
+                  <Gift className="w-3.5 h-3.5" />
+                  Trial grátis — sem cartão
+                </div>
+                <div className="inline-flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-sm font-medium px-4 py-1.5 rounded-full">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Powered by Azure OpenAI
+                </div>
               </div>
 
               <h1 className="text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
@@ -189,19 +195,20 @@ export default function LandingPage() {
                   to="/register"
                   className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold px-7 py-4 rounded-xl text-base shadow-lg shadow-purple-500/25 transition-all hover:shadow-purple-500/40 hover:-translate-y-0.5"
                 >
-                  Começar agora — é grátis
+                  <Gift className="w-4 h-4" />
+                  Experimentar grátis
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
-                  to="/login"
+                  to="/pricing"
                   className="inline-flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold px-7 py-4 rounded-xl text-base transition-all hover:-translate-y-0.5"
                 >
-                  Já tenho conta
+                  Ver preços
                 </Link>
               </div>
 
               <div className="flex flex-wrap gap-x-6 gap-y-2">
-                {['Sem cartão de crédito', 'Configuração em minutos', 'Cancele quando quiser'].map(t => (
+                {['Sem cartão no trial', 'Configuração em minutos', 'Pague só pelo que usar'].map(t => (
                   <span key={t} className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
                     <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                     {t}
@@ -331,15 +338,22 @@ export default function LandingPage() {
             Pronto para transformar sua presença no Instagram?
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400">
-            Crie sua conta agora e gere seu primeiro post em menos de 5 minutos.
+            Crie sua conta, ganhe créditos grátis e gere seu primeiro post em menos de 5 minutos. Sem cartão.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/register"
               className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold px-8 py-4 rounded-xl text-lg shadow-xl shadow-purple-500/30 transition-all hover:-translate-y-0.5"
             >
-              Criar minha conta grátis
+              <Gift className="w-5 h-5" />
+              Criar conta e ganhar créditos grátis
               <ArrowRight className="w-5 h-5" />
+            </Link>
+            <Link
+              to="/pricing"
+              className="inline-flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold px-8 py-4 rounded-xl text-lg transition-all hover:-translate-y-0.5"
+            >
+              Como funciona os preços?
             </Link>
           </div>
         </div>

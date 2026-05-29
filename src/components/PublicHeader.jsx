@@ -16,6 +16,12 @@ export default function PublicHeader() {
         </Link>
         <div className="flex items-center gap-3">
           <Link
+            to="/pricing"
+            className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors px-4 py-2 hidden sm:block"
+          >
+            Preços
+          </Link>
+          <Link
             to="/login"
             className="text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors px-4 py-2"
           >

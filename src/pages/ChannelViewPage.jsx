@@ -958,12 +958,11 @@ const ChannelViewPage = () => {
                   <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} rows="6"
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Detalhe adicional (o prompt do canal já é aplicado automaticamente)..." />
-                  <CreditGate blocked={!canAvatar} needed={30} className="w-full">
-                    <button onClick={generateNewAvatar} disabled={generatingAvatar}
-                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center space-x-2">
-                      {generatingAvatar ? <><Loader className="animate-spin" size={20} /><span>Gerando...</span></> : <><Wand2 size={20} /><span>Gerar Avatar</span></>}
-                    </button>
-                  </CreditGate>
+                  {!canAvatar && <NoCreditsAlert needed={30} />}
+                  <button onClick={generateNewAvatar} disabled={generatingAvatar || !canAvatar}
+                    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center space-x-2">
+                    {generatingAvatar ? <><Loader className="animate-spin" size={20} /><span>Gerando...</span></> : <><Wand2 size={20} /><span>Gerar Avatar</span></>}
+                  </button>
                 </div>
               )}
               {avatarTab === 'upload' && (
@@ -1030,12 +1029,11 @@ const ChannelViewPage = () => {
                           <textarea value={imageGenPrompt} onChange={(e) => setImageGenPrompt(e.target.value)} rows="4"
                             className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 resize-none"
                             placeholder="Detalhe adicional (o prompt do canal já é aplicado automaticamente)..." />
-                          <CreditGate blocked={!canImage} needed={30} className="w-full">
-                            <button onClick={handleGeneratePostImage} disabled={generatingPostImage}
-                              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 rounded-lg text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
-                              {generatingPostImage ? <><Loader className="animate-spin" size={14} /><span>Gerando...</span></> : <><Wand2 size={14} /><span>Gerar</span></>}
-                            </button>
-                          </CreditGate>
+                          {!canImage && <NoCreditsAlert needed={30} />}
+                          <button onClick={handleGeneratePostImage} disabled={generatingPostImage || !canImage}
+                            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 rounded-lg text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
+                            {generatingPostImage ? <><Loader className="animate-spin" size={14} /><span>Gerando...</span></> : <><Wand2 size={14} /><span>Gerar</span></>}
+                          </button>
                         </div>
                       )}
                       {imagePickerTab === 'upload' && (
