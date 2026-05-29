@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { useTheme } from './ThemeContext';
 import { useAuth, AuthProvider } from './AuthContext';
-import { Moon, Sun, Sparkles, LogOut, User } from 'lucide-react';
+import { Moon, Sun, Sparkles, LogOut, User, DollarSign } from 'lucide-react';
 import ChannelsPage from './pages/ChannelsPage';
 import CreateChannelPage from './pages/CreateChannelPage';
 import EditChannelPage from './pages/EditChannelPage';
@@ -11,6 +11,7 @@ import GeneratePostPage from './pages/GeneratePostPage';
 import GenerateVideoPage from './pages/GenerateVideoPage';
 import VideoEditorPage from './pages/VideoEditorPage';
 import ChannelDashboardPage from './pages/ChannelDashboardPage';
+import CreditsLogPage from './pages/CreditsLogPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import LoginPage from './pages/LoginPage';
@@ -51,6 +52,14 @@ function Navigation() {
             </Link>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              to="/credits"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title="Consumo de Créditos"
+            >
+              <DollarSign className="w-4 h-4" />
+              <span className="hidden sm:inline">Créditos</span>
+            </Link>
             <div className="hidden sm:flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
               <User className="w-4 h-4" />
               <span>{user.name}</span>
@@ -121,6 +130,7 @@ function AppRoutes() {
           <Route path="/channels/:id/generate-video" element={<ProtectedRoute><GenerateVideoPage /></ProtectedRoute>} />
           <Route path="/video-editor/:projectId" element={<ProtectedRoute><VideoEditorPage /></ProtectedRoute>} />
           <Route path="/channels/:id/dashboard" element={<ProtectedRoute><ChannelDashboardPage /></ProtectedRoute>} />
+          <Route path="/credits" element={<ProtectedRoute><CreditsLogPage /></ProtectedRoute>} />
         </Routes>
       </main>
       <Footer />

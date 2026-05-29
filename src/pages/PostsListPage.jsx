@@ -124,6 +124,12 @@ const PostsListPage = () => {
                       <span>{formatDate(post.created_at)}</span>
                     </div>
                     <div className="flex items-center space-x-2">
+                      {post.credits_consumed > 0 && (
+                        <span className="flex items-center space-x-1 text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-full">
+                          <Sparkles size={16} />
+                          <span className="font-medium">{post.credits_consumed.toFixed(2)} créditos</span>
+                        </span>
+                      )}
                       {post.published ? (
                         <span className="flex items-center space-x-1 text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-3 py-1 rounded-full">
                           <CheckCircle size={16} />
