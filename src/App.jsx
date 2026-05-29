@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { useTheme } from './ThemeContext';
 import { useAuth, AuthProvider } from './AuthContext';
-import { Moon, Sun, Sparkles, LogOut, User, DollarSign } from 'lucide-react';
+import { Moon, Sun, Sparkles, LogOut, User, DollarSign, UserCircle, Settings, Shield, ChevronDown } from 'lucide-react';
 import ChannelsPage from './pages/ChannelsPage';
 import CreateChannelPage from './pages/CreateChannelPage';
 import EditChannelPage from './pages/EditChannelPage';
@@ -12,6 +12,8 @@ import GenerateVideoPage from './pages/GenerateVideoPage';
 import VideoEditorPage from './pages/VideoEditorPage';
 import ChannelDashboardPage from './pages/ChannelDashboardPage';
 import CreditsLogPage from './pages/CreditsLogPage';
+import ProfilePage from './pages/ProfilePage';
+import AdminPage from './pages/AdminPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import LoginPage from './pages/LoginPage';
@@ -34,8 +36,24 @@ function ProtectedRoute({ children }) {
 function Navigation() {
   const { darkMode, toggleDarkMode } = useTheme();
   const { user, logout } = useAuth();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Fechar dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (!user) return null;
+
+  // Verificar se é admin (daniel.fabbri@avanade.com)
+  const isAdmin = user.email === 'daniel.fabbri@avanade.com';
 
   return (
     <nav className="relative z-10 bg-white dark:bg-gray-800 shadow-lg transition-colors">
@@ -60,10 +78,6 @@ function Navigation() {
               <DollarSign className="w-4 h-4" />
               <span className="hidden sm:inline">Créditos</span>
             </Link>
-            <div className="hidden sm:flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
-              <User className="w-4 h-4" />
-              <span>{user.name}</span>
-            </div>
             <button
               onClick={toggleDarkMode}
               className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
@@ -75,14 +89,55 @@ function Navigation() {
                 <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
               )}
             </button>
-            <button
-              onClick={logout}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              title="Sair"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Sair</span>
-            </button>
+            
+            {/* Dropdown de Perfil */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <UserCircle className="w-5 h-5" />
+                <span className="hidden sm:inline">{user.name}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {dropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                  <Link
+                    to="/profile"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Editar Perfil</span>
+                  </Link>
+                  
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setDropdownOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-purple-600 dark:text-purple-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Shield className="w-4 h-4" />
+                      <span>Admin</span>
+                    </Link>
+                  )}
+                  
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+                  
+                  <button
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      logout();
+                    }}
+                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sair</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -131,6 +186,8 @@ function AppRoutes() {
           <Route path="/video-editor/:projectId" element={<ProtectedRoute><VideoEditorPage /></ProtectedRoute>} />
           <Route path="/channels/:id/dashboard" element={<ProtectedRoute><ChannelDashboardPage /></ProtectedRoute>} />
           <Route path="/credits" element={<ProtectedRoute><CreditsLogPage /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
         </Routes>
       </main>
       <Footer />
