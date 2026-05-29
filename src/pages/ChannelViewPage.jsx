@@ -804,7 +804,6 @@ const ChannelViewPage = () => {
                   )}
                 </div>
               </div>
-            </div>
             <div className="flex justify-end space-x-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
               <button onClick={() => setShowEditModal(false)} disabled={saving}
                 className="px-5 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
