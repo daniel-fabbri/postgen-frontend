@@ -147,7 +147,7 @@ export default function BuyCreditsPage() {
             <div className="flex justify-between items-center">
               <span className="text-gray-600 dark:text-gray-400 text-sm">Créditos</span>
               <span className="text-xl font-semibold text-purple-600 dark:text-purple-400">
-                {paymentData.credits_amount.toFixed(2)} créditos
+                {Number(paymentData.credits_amount).toLocaleString('pt-BR')} créditos
               </span>
             </div>
           </div>

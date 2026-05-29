@@ -25,8 +25,6 @@ const GenerateVideoPage = () => {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
   const balance = user?.credits_balance || 0;
-  const costForVideo = seconds * 50;
-  const hasCredits = balance >= costForVideo;
   const [channel, setChannel] = useState(null);
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -34,6 +32,8 @@ const GenerateVideoPage = () => {
   const [additionalPrompt, setAdditionalPrompt] = useState('');
   const [seconds, setSeconds] = useState(4);
   const [size, setSize] = useState('720x1280');
+  const costForVideo = seconds * 50;
+  const hasCredits = balance >= costForVideo;
   const [elapsed, setElapsed] = useState(0);
   const [caption, setCaption] = useState('');
   const [publishing, setPublishing] = useState(false);

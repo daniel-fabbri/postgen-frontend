@@ -13,12 +13,12 @@ export default function CreditGate({ blocked, needed, children, className = '' }
 
   return (
     <div
-      className={`relative inline-flex ${className}`}
+      className={`relative flex ${className}`}
       onMouseEnter={() => setVisible(true)}
       onMouseLeave={() => setVisible(false)}
     >
-      {/* Render child with pointer-events disabled so hover still fires on wrapper */}
-      <div className="pointer-events-none opacity-50 select-none">
+      {/* pointer-events disabled so hover still fires on wrapper; w-full so button fills parent */}
+      <div className="pointer-events-none opacity-50 select-none w-full">
         {children}
       </div>
 
