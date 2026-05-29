@@ -407,8 +407,8 @@ const ChannelViewPage = () => {
       </button>
 
       {/* Channel Info Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="relative h-48 bg-gradient-to-r from-purple-600 to-blue-600">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+        <div className="relative h-48 bg-gradient-to-r from-purple-600 to-blue-600 rounded-t-xl overflow-hidden">
           <div className="absolute -bottom-16 left-8 group">
             <div className="relative">
               {channel.avatar_url ? (
@@ -432,12 +432,12 @@ const ChannelViewPage = () => {
             <h1 className="text-3xl font-bold">{channel.name}</h1>
             <div className="flex items-center space-x-3">
               <button onClick={() => navigate(`/channels/${id}/generate-video`)}
-                className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2">
+                className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2">
                 <Video size={16} />
                 <span>Gerar Vídeo</span>
               </button>
               <button onClick={() => navigate(`/channels/${id}/generate`)}
-                className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2">
+                className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2">
                 <Sparkles size={16} />
                 <span>Gerar Post</span>
               </button>
@@ -446,7 +446,7 @@ const ChannelViewPage = () => {
               <div className="relative" ref={channelDropdownRef}>
                 <button
                   onClick={() => setChannelDropdownOpen(!channelDropdownOpen)}
-                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center space-x-2"
+                  className="px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center space-x-2"
                 >
                   <MoreVertical size={16} />
                   <ChevronDown className={`transition-transform ${channelDropdownOpen ? 'rotate-180' : ''}`} size={16} />
