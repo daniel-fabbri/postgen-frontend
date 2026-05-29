@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader, TrendingUp, Activity, DollarSign, Calendar, Filter } from 'lucide-react';
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8004';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8004/api';
 
 const CreditsLogPage = () => {
   const navigate = useNavigate();
@@ -20,10 +20,10 @@ const CreditsLogPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('postgen_token');
       
       // Load summary
-      const summaryResponse = await axios.get(`${API_BASE}/api/credits/summary`, {
+      const summaryResponse = await axios.get(`${API_BASE}/credits/summary`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSummary(summaryResponse.data);
@@ -33,7 +33,7 @@ const CreditsLogPage = () => {
       if (filterType !== 'all') params.resource_type = filterType;
       if (selectedChannel !== 'all') params.channel_id = selectedChannel;
       
-      const logResponse = await axios.get(`${API_BASE}/api/credits/log`, {
+      const logResponse = await axios.get(`${API_BASE}/credits/log`, {
         params,
         headers: { Authorization: `Bearer ${token}` }
       });
