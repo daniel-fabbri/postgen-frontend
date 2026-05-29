@@ -32,13 +32,13 @@ const CreditsLogPage = () => {
       const [summaryRes, logRes, paymentsRes] = await Promise.all([
         axios.get(`${API_BASE}/credits/summary`, { headers }),
         axios.get(`${API_BASE}/credits/log`, { headers }),
-        paymentsAPI.listMy(),
+        paymentsAPI.listMy().catch(() => ({ data: [] })),
       ]);
 
       setAllChannels(summaryRes.data.by_channel || []);
       setTotalConsumed(summaryRes.data.total_credits || 0);
       setAllLog(logRes.data);
-      setPayments(paymentsRes.data);
+      setPayments(paymentsRes.data || []);
     } catch (error) {
       console.error('Error loading credits data:', error);
     } finally {
