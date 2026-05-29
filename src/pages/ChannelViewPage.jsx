@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { channelsAPI, postsAPI, avatarsAPI, videosAPI, videoProjectsAPI, insightsAPI, referencesAPI, postImageUrl } from '../api';
 import {
   ArrowLeft, Edit2, Sparkles, X, Loader, Edit, Calendar,
   ChevronLeft, ChevronRight, Share2, Camera, Upload, Wand2,
   Image as ImageIcon, Video, Download, Play, CheckCircle, Copy, Instagram, Unlink, XCircle, Info, Plus,
-  Heart, MessageCircle, Eye, BarChart2, RefreshCw, Trash2,
+  Heart, MessageCircle, Eye, BarChart2, RefreshCw, Trash2, MoreVertical, ChevronDown,
 } from 'lucide-react';
 
 const ChannelViewPage = () => {
@@ -48,6 +48,8 @@ const ChannelViewPage = () => {
   const [references, setReferences] = useState([]);
   const [uploadingRef, setUploadingRef] = useState(false);
   const [describingRefId, setDescribingRefId] = useState(null);
+  const [channelDropdownOpen, setChannelDropdownOpen] = useState(false);
+  const channelDropdownRef = useRef(null);
   const [formData, setFormData] = useState({
     name: '',
     objective: '',
@@ -64,6 +66,17 @@ const ChannelViewPage = () => {
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
   useEffect(() => { loadData(); }, [id]);
+
+  // Fechar dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (channelDropdownRef.current && !channelDropdownRef.current.contains(event.target)) {
+        setChannelDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const loadData = async () => {
     try {
@@ -418,11 +431,6 @@ const ChannelViewPage = () => {
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold">{channel.name}</h1>
             <div className="flex items-center space-x-3">
-              <button onClick={() => navigate(`/channels/${id}/dashboard`)}
-                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center space-x-2">
-                <BarChart2 size={16} />
-                <span>Dashboard</span>
-              </button>
               <button onClick={() => navigate(`/channels/${id}/generate-video`)}
                 className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2">
                 <Video size={16} />
@@ -433,17 +441,47 @@ const ChannelViewPage = () => {
                 <Sparkles size={16} />
                 <span>Gerar Post</span>
               </button>
-              <button onClick={async () => {
-                setShowEditModal(true);
-                try {
-                  const res = await referencesAPI.getAll(id);
-                  setReferences(res.data);
-                } catch {}
-              }}
-                className="px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors flex items-center space-x-2">
-                <Edit2 size={16} />
-                <span>Editar Canal</span>
-              </button>
+              
+              {/* Dropdown do Canal */}
+              <div className="relative" ref={channelDropdownRef}>
+                <button
+                  onClick={() => setChannelDropdownOpen(!channelDropdownOpen)}
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center space-x-2"
+                >
+                  <MoreVertical size={16} />
+                  <ChevronDown className={`transition-transform ${channelDropdownOpen ? 'rotate-180' : ''}`} size={16} />
+                </button>
+
+                {channelDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                    <button
+                      onClick={async () => {
+                        setChannelDropdownOpen(false);
+                        setShowEditModal(true);
+                        try {
+                          const res = await referencesAPI.getAll(id);
+                          setReferences(res.data);
+                        } catch {}
+                      }}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Edit2 size={16} />
+                      <span>Editar Canal</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        setChannelDropdownOpen(false);
+                        navigate(`/channels/${id}/dashboard`);
+                      }}
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <BarChart2 size={16} />
+                      <span>Dashboard</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
