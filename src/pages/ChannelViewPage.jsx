@@ -408,9 +408,9 @@ const ChannelViewPage = () => {
       </button>
 
       {/* Channel Info Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 relative">
         <div className="relative h-48 bg-gradient-to-r from-purple-600 to-blue-600 rounded-t-xl overflow-hidden">
-          <div className="absolute -bottom-16 left-8 group z-10">
+          <div className="absolute -bottom-16 left-8 group z-30">
             <div className="relative">
               {channel.avatar_url ? (
                 <img src={channel.avatar_url} alt={channel.name}
