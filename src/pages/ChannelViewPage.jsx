@@ -47,6 +47,7 @@ const ChannelViewPage = () => {
   const [galleryCopied, setGalleryCopied] = useState(false);
   const [references, setReferences] = useState([]);
   const [uploadingRef, setUploadingRef] = useState(false);
+  const [describingRefId, setDescribingRefId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     objective: '',
@@ -681,7 +682,19 @@ const ChannelViewPage = () => {
                           try {
                             setUploadingRef(true);
                             const res = await referencesAPI.upload(id, file);
-                            setReferences(prev => [res.data, ...prev]);
+                            const uploaded = res.data;
+                            setReferences(prev => [uploaded, ...prev]);
+                            // Poll once after 8s if description is still null (vision model may be slow)
+                            if (!uploaded.description) {
+                              setDescribingRefId(uploaded.id);
+                              setTimeout(async () => {
+                                try {
+                                  const fresh = await referencesAPI.getAll(id);
+                                  setReferences(fresh.data);
+                                } catch {}
+                                setDescribingRefId(null);
+                              }, 8000);
+                            }
                           } catch (err) {
                             alert('Erro ao enviar: ' + (err.response?.data?.detail || err.message));
                           } finally {
@@ -715,8 +728,10 @@ const ChannelViewPage = () => {
                             <Trash2 size={10} className="text-white" />
                           </button>
                           {!ref.description && (
-                            <div className="absolute bottom-0 left-0 right-0 bg-amber-500/80 text-white text-[8px] text-center py-0.5">
-                              Descrevendo...
+                            <div className={`absolute bottom-0 left-0 right-0 text-white text-[8px] text-center py-0.5 ${
+                              describingRefId === ref.id ? 'bg-amber-500/80' : 'bg-gray-500/70'
+                            }`}>
+                              {describingRefId === ref.id ? 'Descrevendo...' : 'Sem descrição'}
                             </div>
                           )}
                         </div>
