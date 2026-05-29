@@ -24,7 +24,9 @@ const GenerateVideoPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const hasCredits = (user?.credits_balance || 0) > 0;
+  const balance = user?.credits_balance || 0;
+  const costForVideo = seconds * 50; // 50 créditos/segundo (Sora)
+  const hasCredits = balance >= costForVideo;
   const [channel, setChannel] = useState(null);
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -229,7 +231,7 @@ const GenerateVideoPage = () => {
             />
           </div>
 
-          {!hasCredits && <NoCreditsAlert />}
+          {!hasCredits && <NoCreditsAlert needed={costForVideo} />}
           <button
             onClick={handleGenerate}
             disabled={!hasCredits}

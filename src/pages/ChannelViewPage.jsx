@@ -14,7 +14,11 @@ const ChannelViewPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const hasCredits = (user?.credits_balance || 0) > 0;
+  const balance = user?.credits_balance || 0;
+  const canPost    = balance >= 32;  // texto ~2 + imagem ~30
+  const canVideo   = balance >= 200; // mínimo 4s × 50cr
+  const canAvatar  = balance >= 30;  // 1 imagem MAI
+  const canImage   = balance >= 30;  // 1 imagem MAI
   const [channel, setChannel] = useState(null);
   const [posts, setPosts] = useState([]);
   const [videos, setVideos] = useState([]);
@@ -437,17 +441,17 @@ const ChannelViewPage = () => {
             <h1 className="text-3xl font-bold">{channel.name}</h1>
             <div className="flex items-center space-x-3">
               <button
-                onClick={() => hasCredits && navigate(`/channels/${id}/generate-video`)}
-                disabled={!hasCredits}
-                title={!hasCredits ? 'Créditos insuficientes' : undefined}
+                onClick={() => canVideo && navigate(`/channels/${id}/generate-video`)}
+                disabled={!canVideo}
+                title={!canVideo ? `Requer ~200 créditos (vídeo 4s mínimo). Saldo: ${Math.round(balance)}` : undefined}
                 className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none">
                 <Video size={16} />
                 <span>Gerar Vídeo</span>
               </button>
               <button
-                onClick={() => hasCredits && navigate(`/channels/${id}/generate`)}
-                disabled={!hasCredits}
-                title={!hasCredits ? 'Créditos insuficientes' : undefined}
+                onClick={() => canPost && navigate(`/channels/${id}/generate`)}
+                disabled={!canPost}
+                title={!canPost ? `Requer ~32 créditos. Saldo: ${Math.round(balance)}` : undefined}
                 className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none">
                 <Sparkles size={16} />
                 <span>Gerar Post</span>
@@ -951,8 +955,8 @@ const ChannelViewPage = () => {
                   <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} rows="6"
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Detalhe adicional (o prompt do canal já é aplicado automaticamente)..." />
-                  {!hasCredits && <NoCreditsAlert />}
-                  <button onClick={generateNewAvatar} disabled={generatingAvatar || !hasCredits}
+                  {!canAvatar && <NoCreditsAlert needed={30} />}
+                  <button onClick={generateNewAvatar} disabled={generatingAvatar || !canAvatar}
                     className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center space-x-2">
                     {generatingAvatar ? <><Loader className="animate-spin" size={20} /><span>Gerando...</span></> : <><Wand2 size={20} /><span>Gerar Avatar</span></>}
                   </button>
@@ -1022,8 +1026,8 @@ const ChannelViewPage = () => {
                           <textarea value={imageGenPrompt} onChange={(e) => setImageGenPrompt(e.target.value)} rows="4"
                             className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 resize-none"
                             placeholder="Detalhe adicional (o prompt do canal já é aplicado automaticamente)..." />
-                          {!hasCredits && <NoCreditsAlert />}
-                          <button onClick={handleGeneratePostImage} disabled={generatingPostImage || !hasCredits}
+                          {!canImage && <NoCreditsAlert needed={30} />}
+                          <button onClick={handleGeneratePostImage} disabled={generatingPostImage || !canImage}
                             className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 rounded-lg text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
                             {generatingPostImage ? <><Loader className="animate-spin" size={14} /><span>Gerando...</span></> : <><Wand2 size={14} /><span>Gerar</span></>}
                           </button>

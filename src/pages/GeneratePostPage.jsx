@@ -9,7 +9,9 @@ const GeneratePostPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const hasCredits = (user?.credits_balance || 0) > 0;
+  const balance = user?.credits_balance || 0;
+  const POST_MIN_CREDITS = 32; // texto (~2) + imagem MAI (~30)
+  const hasCredits = balance >= POST_MIN_CREDITS;
   const [channel, setChannel] = useState(null);
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -120,7 +122,7 @@ const GeneratePostPage = () => {
       {/* Prompt input — always visible */}
       {!loading && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          {!hasCredits && <NoCreditsAlert />}
+          {!hasCredits && <NoCreditsAlert needed={POST_MIN_CREDITS} />}
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Contexto adicional <span className="font-normal text-gray-400">(opcional)</span>
           </label>

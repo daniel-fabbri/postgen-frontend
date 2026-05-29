@@ -2,13 +2,16 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CreditCard } from 'lucide-react';
 
-export default function NoCreditsAlert() {
+export default function NoCreditsAlert({ needed = null }) {
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 mb-4">
       <div className="flex items-center gap-3">
         <AlertTriangle className="text-amber-500 flex-shrink-0" size={20} />
         <p className="text-sm text-amber-800 dark:text-amber-200">
-          <strong>Créditos insuficientes.</strong> Você precisa de créditos para usar a IA.
+          <strong>Créditos insuficientes.</strong>{' '}
+          {needed != null
+            ? `Esta operação requer ~${needed.toLocaleString('pt-BR')} créditos.`
+            : 'Você precisa de créditos para usar a IA.'}
         </p>
       </div>
       <Link

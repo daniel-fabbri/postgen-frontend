@@ -24,7 +24,7 @@ const VideoEditorPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const hasCredits = (user?.credits_balance || 0) > 0;
+  const balance = user?.credits_balance || 0;
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -33,6 +33,8 @@ const VideoEditorPage = () => {
   const [additionalPrompt, setAdditionalPrompt] = useState('');
   const [selectedDuration, setSelectedDuration] = useState(4);
   const [selectedSize, setSelectedSize] = useState('720x1280');
+  const costForClip = selectedDuration * 50;
+  const hasCredits = balance >= costForClip;
   const [previewClip, setPreviewClip] = useState(null);
   const [promptOpenFor, setPromptOpenFor] = useState(null);
 
@@ -339,7 +341,7 @@ const VideoEditorPage = () => {
               </div>
             </div>
           </div>
-          {!hasCredits && <NoCreditsAlert />}
+          {!hasCredits && <NoCreditsAlert needed={costForClip} />}
           <button
             onClick={handleGenerateClip}
             disabled={generating || !hasCredits}

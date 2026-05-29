@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { paymentsAPI } from '../api';
 import { CreditCard, ArrowLeft, CheckCircle, XCircle, Loader, Copy, QrCode } from 'lucide-react';
+import CostGuide from '../components/CostGuide';
 
 export default function BuyCreditsPage() {
   const navigate = useNavigate();
@@ -339,9 +340,10 @@ export default function BuyCreditsPage() {
 
         {/* Info */}
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-          <p className="text-sm text-blue-900 dark:text-blue-300">
+          <p className="text-sm text-blue-900 dark:text-blue-300 mb-3">
             <strong>Como funciona:</strong> Após gerar o PIX, você poderá pagar escaneando o QR Code ou copiando o código. O pagamento é confirmado automaticamente em poucos segundos!
           </p>
+          <CostGuide />
         </div>
       </div>
     </div>
