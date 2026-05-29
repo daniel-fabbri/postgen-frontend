@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { channelsAPI, postsAPI, avatarsAPI, videosAPI, videoProjectsAPI, insightsAPI, postImageUrl } from '../api';
+import { channelsAPI, postsAPI, avatarsAPI, videosAPI, videoProjectsAPI, insightsAPI, referencesAPI, postImageUrl } from '../api';
 import {
   ArrowLeft, Edit2, Sparkles, X, Loader, Edit, Calendar,
   ChevronLeft, ChevronRight, Share2, Camera, Upload, Wand2,
   Image as ImageIcon, Video, Download, Play, CheckCircle, Copy, Instagram, Unlink, XCircle, Info, Plus,
-  Heart, MessageCircle, Eye, BarChart2, RefreshCw,
+  Heart, MessageCircle, Eye, BarChart2, RefreshCw, Trash2,
 } from 'lucide-react';
 
 const ChannelViewPage = () => {
@@ -45,6 +45,8 @@ const ChannelViewPage = () => {
   const [generatingAvatar, setGeneratingAvatar] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [galleryCopied, setGalleryCopied] = useState(false);
+  const [references, setReferences] = useState([]);
+  const [uploadingRef, setUploadingRef] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     objective: '',
@@ -428,7 +430,13 @@ const ChannelViewPage = () => {
                 <Sparkles size={16} />
                 <span>Gerar Post</span>
               </button>
-              <button onClick={() => setShowEditModal(true)}
+              <button onClick={async () => {
+                setShowEditModal(true);
+                try {
+                  const res = await referencesAPI.getAll(id);
+                  setReferences(res.data);
+                } catch {}
+              }}
                 className="px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors flex items-center space-x-2">
                 <Edit2 size={16} />
                 <span>Editar Canal</span>
@@ -649,6 +657,73 @@ const ChannelViewPage = () => {
                     <span>{igMessage.text}</span>
                   </div>
                 )}
+
+                {/* References section */}
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <p className="text-sm font-semibold">Referências visuais</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        Fotos de referência do personagem/pessoa — a IA usa como base para gerar imagens consistentes.
+                      </p>
+                    </div>
+                    <label className={`shrink-0 ml-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+                      uploadingRef
+                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-400'
+                        : 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/60'
+                    }`}>
+                      {uploadingRef ? <Loader className="animate-spin" size={12} /> : <Upload size={12} />}
+                      <span>{uploadingRef ? 'Enviando...' : 'Adicionar'}</span>
+                      <input type="file" className="hidden" accept="image/*" disabled={uploadingRef}
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          try {
+                            setUploadingRef(true);
+                            const res = await referencesAPI.upload(id, file);
+                            setReferences(prev => [res.data, ...prev]);
+                          } catch (err) {
+                            alert('Erro ao enviar: ' + (err.response?.data?.detail || err.message));
+                          } finally {
+                            setUploadingRef(false);
+                            e.target.value = '';
+                          }
+                        }} />
+                    </label>
+                  </div>
+                  {references.length === 0 ? (
+                    <p className="text-xs text-gray-400 italic py-2">Nenhuma referência adicionada ainda.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {references.map((ref) => (
+                        <div key={ref.id} className="relative group w-16 h-16 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
+                          <img src={ref.blob_url} alt="Referência" className="w-full h-full object-cover" />
+                          {ref.description && (
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                              <p className="text-white text-[8px] leading-tight p-1 text-center line-clamp-4">{ref.description.slice(0, 80)}</p>
+                            </div>
+                          )}
+                          <button
+                            onClick={async () => {
+                              try {
+                                await referencesAPI.delete(id, ref.id);
+                                setReferences(prev => prev.filter(r => r.id !== ref.id));
+                              } catch {}
+                            }}
+                            className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 size={10} className="text-white" />
+                          </button>
+                          {!ref.description && (
+                            <div className="absolute bottom-0 left-0 right-0 bg-amber-500/80 text-white text-[8px] text-center py-0.5">
+                              Descrevendo...
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {formData.instagram_user_id && formData.instagram_access_token ? (
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">

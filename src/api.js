@@ -114,6 +114,18 @@ export const videoProjectsAPI = {
   export: (id) => api.post(`/video-projects/${id}/export`),
 };
 
+export const referencesAPI = {
+  getAll: (channelId) => api.get(`/channels/${channelId}/references`),
+  upload: (channelId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/channels/${channelId}/references/upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  delete: (channelId, refId) => api.delete(`/channels/${channelId}/references/${refId}`),
+};
+
 export const insightsAPI = {
   getPost: (postId) => api.get(`/posts/${postId}/insights`),
   refreshPost: (postId) => api.post(`/posts/${postId}/insights/refresh`),
