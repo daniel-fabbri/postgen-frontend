@@ -7,37 +7,32 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8004/api';
 
 const CreditsLogPage = () => {
   const navigate = useNavigate();
-  const [summary, setSummary] = useState(null);
-  const [log, setLog] = useState([]);
+  const [allChannels, setAllChannels] = useState([]);
+  const [allLog, setAllLog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('all');
   const [selectedChannel, setSelectedChannel] = useState('all');
 
   useEffect(() => {
     loadData();
-  }, [filterType, selectedChannel]);
+  }, []);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('postgen_token');
       
-      // Load summary
+      // Load summary to get channels
       const summaryResponse = await axios.get(`${API_BASE}/credits/summary`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSummary(summaryResponse.data);
+      setAllChannels(summaryResponse.data.by_channel || []);
       
-      // Load log with filters
-      const params = {};
-      if (filterType !== 'all') params.resource_type = filterType;
-      if (selectedChannel !== 'all') params.channel_id = selectedChannel;
-      
+      // Load all log without filters
       const logResponse = await axios.get(`${API_BASE}/credits/log`, {
-        params,
         headers: { Authorization: `Bearer ${token}` }
       });
-      setLog(logResponse.data);
+      setAllLog(logResponse.data);
     } catch (error) {
       console.error('Error loading credits data:', error);
       alert('Erro ao carregar dados de créditos');
@@ -45,6 +40,73 @@ const CreditsLogPage = () => {
       setLoading(false);
     }
   };
+
+  // Apply filters to get filtered data
+  const getFilteredData = () => {
+    let filteredLog = [...allLog];
+    
+    if (filterType !== 'all') {
+      filteredLog = filteredLog.filter(item => item.resource_type === filterType);
+    }
+    
+    if (selectedChannel !== 'all') {
+      filteredLog = filteredLog.filter(item => item.channel_id === selectedChannel);
+    }
+
+    // Calculate summary from filtered log
+    const totalCredits = filteredLog.reduce((sum, item) => sum + item.credits_consumed, 0);
+    
+    // Group by operation
+    const byOperation = {};
+    filteredLog.forEach(item => {
+      if (!byOperation[item.operation_type]) {
+        byOperation[item.operation_type] = 0;
+      }
+      byOperation[item.operation_type] += item.credits_consumed;
+    });
+    
+    // Group by resource
+    const byResource = {};
+    filteredLog.forEach(item => {
+      if (!byResource[item.resource_type]) {
+        byResource[item.resource_type] = 0;
+      }
+      byResource[item.resource_type] += item.credits_consumed;
+    });
+    
+    // Group by channel
+    const byChannel = {};
+    filteredLog.forEach(item => {
+      if (item.channel_id && item.channel_name) {
+        if (!byChannel[item.channel_id]) {
+          byChannel[item.channel_id] = {
+            channel_id: item.channel_id,
+            channel_name: item.channel_name,
+            credits: 0
+          };
+        }
+        byChannel[item.channel_id].credits += item.credits_consumed;
+      }
+    });
+
+    return {
+      summary: {
+        total_credits: totalCredits,
+        by_operation: Object.entries(byOperation).map(([operation_type, credits]) => ({
+          operation_type,
+          credits
+        })),
+        by_resource: Object.entries(byResource).map(([resource_type, credits]) => ({
+          resource_type,
+          credits
+        })),
+        by_channel: Object.values(byChannel)
+      },
+      log: filteredLog
+    };
+  };
+
+  const { summary, log } = getFilteredData();
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -124,6 +186,46 @@ const CreditsLogPage = () => {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
         <h1 className="text-3xl font-bold mb-6">Consumo de Créditos</h1>
 
+        {/* Filters */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-4 mb-4">
+            <Filter size={20} className="text-gray-600 dark:text-gray-400" />
+            <h2 className="text-xl font-semibold">Filtros</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Tipo de Recurso</label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+              >
+                <option value="all">Todos</option>
+                <option value="post">Posts</option>
+                <option value="video">Vídeos</option>
+                <option value="avatar">Avatares</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Canal</label>
+              <select
+                value={selectedChannel}
+                onChange={(e) => setSelectedChannel(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+              >
+                <option value="all">Todos os Canais</option>
+                {allChannels.map((ch) => (
+                  <option key={ch.channel_id} value={ch.channel_id}>
+                    {ch.channel_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
@@ -199,46 +301,6 @@ const CreditsLogPage = () => {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center space-x-4 mb-6">
-          <Filter size={20} className="text-gray-600 dark:text-gray-400" />
-          <h2 className="text-xl font-semibold">Filtros</h2>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Tipo de Recurso</label>
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
-            >
-              <option value="all">Todos</option>
-              <option value="post">Posts</option>
-              <option value="video">Vídeos</option>
-              <option value="avatar">Avatares</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Canal</label>
-            <select
-              value={selectedChannel}
-              onChange={(e) => setSelectedChannel(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
-            >
-              <option value="all">Todos os Canais</option>
-              {summary?.by_channel?.map((ch) => (
-                <option key={ch.channel_id} value={ch.channel_id}>
-                  {ch.channel_name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
       </div>
 
       {/* Log Table */}
