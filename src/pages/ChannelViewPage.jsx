@@ -75,7 +75,7 @@ const ChannelViewPage = () => {
                   ...videos.map(v => ({ ...v, _type: 'video' }))]
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-  useEffect(() => { loadData(); }, [id]);
+  useEffect(() => { loadData(); refreshUser(); }, [id]);
 
   // Fechar dropdown ao clicar fora
   useEffect(() => {
