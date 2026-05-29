@@ -5,6 +5,8 @@ import {
   ArrowLeft, Plus, Trash2, ChevronLeft, ChevronRight,
   Loader, Wand2, Save, Play, Video, X, Info, CheckCircle,
 } from 'lucide-react';
+import { useAuth } from '../AuthContext';
+import NoCreditsAlert from '../components/NoCreditsAlert';
 
 const DURATIONS = [
   { value: 4, label: '4s' },
@@ -21,6 +23,8 @@ const SIZES = [
 const VideoEditorPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const hasCredits = (user?.credits_balance || 0) > 0;
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -335,9 +339,10 @@ const VideoEditorPage = () => {
               </div>
             </div>
           </div>
+          {!hasCredits && <NoCreditsAlert />}
           <button
             onClick={handleGenerateClip}
-            disabled={generating}
+            disabled={generating || !hasCredits}
             className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {generating

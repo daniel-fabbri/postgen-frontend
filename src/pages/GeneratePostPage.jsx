@@ -2,10 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { channelsAPI, postsAPI } from '../api';
 import { Loader, Sparkles, Send, ArrowLeft, RefreshCw, Copy, CheckCheck, ImageIcon } from 'lucide-react';
+import { useAuth } from '../AuthContext';
+import NoCreditsAlert from '../components/NoCreditsAlert';
 
 const GeneratePostPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const hasCredits = (user?.credits_balance || 0) > 0;
   const [channel, setChannel] = useState(null);
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -116,6 +120,7 @@ const GeneratePostPage = () => {
       {/* Prompt input — always visible */}
       {!loading && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          {!hasCredits && <NoCreditsAlert />}
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Contexto adicional <span className="font-normal text-gray-400">(opcional)</span>
           </label>
@@ -128,7 +133,7 @@ const GeneratePostPage = () => {
           />
           <button
             onClick={handleGenerate}
-            disabled={loading}
+            disabled={loading || !hasCredits}
             className="mt-4 w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-200 dark:hover:shadow-purple-900/30 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Sparkles size={18} />

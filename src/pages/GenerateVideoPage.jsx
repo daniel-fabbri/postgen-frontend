@@ -5,6 +5,8 @@ import {
   Loader, Sparkles, ArrowLeft, RefreshCw, Video, Download,
   Clock, Maximize2, Share2, CheckCircle, Copy,
 } from 'lucide-react';
+import { useAuth } from '../AuthContext';
+import NoCreditsAlert from '../components/NoCreditsAlert';
 
 const DURATIONS = [
   { value: 4, label: '4s', desc: 'Rápido' },
@@ -21,6 +23,8 @@ const SIZES = [
 const GenerateVideoPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const hasCredits = (user?.credits_balance || 0) > 0;
   const [channel, setChannel] = useState(null);
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -225,9 +229,11 @@ const GenerateVideoPage = () => {
             />
           </div>
 
+          {!hasCredits && <NoCreditsAlert />}
           <button
             onClick={handleGenerate}
-            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all flex items-center justify-center gap-2"
+            disabled={!hasCredits}
+            className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Video size={18} />
             Gerar vídeo com Sora

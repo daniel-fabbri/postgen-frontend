@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { channelsAPI, postsAPI, avatarsAPI, videosAPI, videoProjectsAPI, insightsAPI, referencesAPI, postImageUrl } from '../api';
+import { useAuth } from '../AuthContext';
+import NoCreditsAlert from '../components/NoCreditsAlert';
 import {
   ArrowLeft, Edit2, Sparkles, X, Loader, Edit, Calendar,
   ChevronLeft, ChevronRight, Share2, Camera, Upload, Wand2,
@@ -11,6 +13,8 @@ import {
 const ChannelViewPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const hasCredits = (user?.credits_balance || 0) > 0;
   const [channel, setChannel] = useState(null);
   const [posts, setPosts] = useState([]);
   const [videos, setVideos] = useState([]);
@@ -432,13 +436,19 @@ const ChannelViewPage = () => {
           <div className="flex justify-between items-center">
             <h1 className="text-3xl font-bold">{channel.name}</h1>
             <div className="flex items-center space-x-3">
-              <button onClick={() => navigate(`/channels/${id}/generate-video`)}
-                className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2">
+              <button
+                onClick={() => hasCredits && navigate(`/channels/${id}/generate-video`)}
+                disabled={!hasCredits}
+                title={!hasCredits ? 'Créditos insuficientes' : undefined}
+                className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none">
                 <Video size={16} />
                 <span>Gerar Vídeo</span>
               </button>
-              <button onClick={() => navigate(`/channels/${id}/generate`)}
-                className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2">
+              <button
+                onClick={() => hasCredits && navigate(`/channels/${id}/generate`)}
+                disabled={!hasCredits}
+                title={!hasCredits ? 'Créditos insuficientes' : undefined}
+                className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none">
                 <Sparkles size={16} />
                 <span>Gerar Post</span>
               </button>
@@ -941,7 +951,8 @@ const ChannelViewPage = () => {
                   <textarea value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} rows="6"
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Detalhe adicional (o prompt do canal já é aplicado automaticamente)..." />
-                  <button onClick={generateNewAvatar} disabled={generatingAvatar}
+                  {!hasCredits && <NoCreditsAlert />}
+                  <button onClick={generateNewAvatar} disabled={generatingAvatar || !hasCredits}
                     className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center space-x-2">
                     {generatingAvatar ? <><Loader className="animate-spin" size={20} /><span>Gerando...</span></> : <><Wand2 size={20} /><span>Gerar Avatar</span></>}
                   </button>
@@ -1011,7 +1022,8 @@ const ChannelViewPage = () => {
                           <textarea value={imageGenPrompt} onChange={(e) => setImageGenPrompt(e.target.value)} rows="4"
                             className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 resize-none"
                             placeholder="Detalhe adicional (o prompt do canal já é aplicado automaticamente)..." />
-                          <button onClick={handleGeneratePostImage} disabled={generatingPostImage}
+                          {!hasCredits && <NoCreditsAlert />}
+                          <button onClick={handleGeneratePostImage} disabled={generatingPostImage || !hasCredits}
                             className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 rounded-lg text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2">
                             {generatingPostImage ? <><Loader className="animate-spin" size={14} /><span>Gerando...</span></> : <><Wand2 size={14} /><span>Gerar</span></>}
                           </button>
