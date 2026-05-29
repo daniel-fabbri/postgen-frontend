@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import {
   ArrowLeft, Shield, Users, Mail, Calendar, Loader, AlertCircle,
-  Percent, Save, CheckCircle,
+  Percent, Save, CheckCircle, RotateCcw,
 } from 'lucide-react';
 import { usersAPI, adminAPI } from '../api';
 
@@ -83,6 +83,7 @@ function UsersTab() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [error, setError] = useState('');
+  const [resetting, setResetting] = useState(null);
 
   useEffect(() => {
     usersAPI.getAll()
@@ -90,6 +91,19 @@ function UsersTab() {
       .catch(e => setError(e.response?.data?.detail || 'Erro ao carregar usuários'))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleReset = async (u) => {
+    if (!confirm(`Zerar créditos e histórico de ${u.name}?`)) return;
+    setResetting(u.id);
+    try {
+      await adminAPI.resetUserCredits(u.id);
+      alert(`Créditos de ${u.name} zerados.`);
+    } catch (e) {
+      alert('Erro ao zerar créditos');
+    } finally {
+      setResetting(null);
+    }
+  };
 
   const formatDate = (d) => d
     ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -132,7 +146,7 @@ function UsersTab() {
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-100 dark:bg-gray-800">
               <tr>
-                {['ID', 'Nome', 'Email', 'Data de Cadastro'].map(h => (
+                {['ID', 'Nome', 'Email', 'Data de Cadastro', ''].map(h => (
                   <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -157,6 +171,16 @@ function UsersTab() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                     {formatDate(u.created_at)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <button
+                      onClick={() => handleReset(u)}
+                      disabled={resetting === u.id}
+                      title="Zerar créditos e histórico"
+                      className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-40"
+                    >
+                      {resetting === u.id ? <Loader size={14} className="animate-spin" /> : <RotateCcw size={14} />}
+                    </button>
                   </td>
                 </tr>
               ))}

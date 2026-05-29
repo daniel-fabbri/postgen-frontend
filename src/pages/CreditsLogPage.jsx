@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader, TrendingUp, Activity, DollarSign, Calendar, Filter } from 'lucide-react';
+import { ArrowLeft, Loader, TrendingUp, Activity, DollarSign, Calendar, Filter, ShoppingCart, Wallet, TrendingDown, CheckCircle, XCircle, Clock } from 'lucide-react';
 import axios from 'axios';
+import { paymentsAPI } from '../api';
+import { useAuth } from '../AuthContext';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8004/api';
 
 const CreditsLogPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [allChannels, setAllChannels] = useState([]);
   const [allLog, setAllLog] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [totalConsumed, setTotalConsumed] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
   const [filterType, setFilterType] = useState('all');
   const [selectedChannel, setSelectedChannel] = useState('all');
 
@@ -21,356 +27,221 @@ const CreditsLogPage = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('postgen_token');
-      
-      // Load summary to get channels
-      const summaryResponse = await axios.get(`${API_BASE}/credits/summary`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setAllChannels(summaryResponse.data.by_channel || []);
-      
-      // Load all log without filters
-      const logResponse = await axios.get(`${API_BASE}/credits/log`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setAllLog(logResponse.data);
+      const headers = { Authorization: `Bearer ${token}` };
+
+      const [summaryRes, logRes, paymentsRes] = await Promise.all([
+        axios.get(`${API_BASE}/credits/summary`, { headers }),
+        axios.get(`${API_BASE}/credits/log`, { headers }),
+        paymentsAPI.listMy(),
+      ]);
+
+      setAllChannels(summaryRes.data.by_channel || []);
+      setTotalConsumed(summaryRes.data.total_credits || 0);
+      setAllLog(logRes.data);
+      setPayments(paymentsRes.data);
     } catch (error) {
       console.error('Error loading credits data:', error);
-      alert('Erro ao carregar dados de créditos');
     } finally {
       setLoading(false);
     }
   };
 
-  // Apply filters to get filtered data
-  const getFilteredData = () => {
-    let filteredLog = [...allLog];
-    
-    if (filterType !== 'all') {
-      filteredLog = filteredLog.filter(item => item.resource_type === filterType);
-    }
-    
-    if (selectedChannel !== 'all') {
-      filteredLog = filteredLog.filter(item => item.channel_id === selectedChannel);
-    }
+  const getFilteredLog = () => {
+    let filtered = [...allLog];
+    if (filterType !== 'all') filtered = filtered.filter(i => i.resource_type === filterType);
+    if (selectedChannel !== 'all') filtered = filtered.filter(i => i.channel_id === selectedChannel);
+    return filtered;
+  };
 
-    // Calculate summary from filtered log
-    const totalCredits = filteredLog.reduce((sum, item) => sum + item.credits_consumed, 0);
-    
-    // Group by operation
-    const byOperation = {};
-    filteredLog.forEach(item => {
-      if (!byOperation[item.operation_type]) {
-        byOperation[item.operation_type] = 0;
-      }
-      byOperation[item.operation_type] += item.credits_consumed;
-    });
-    
-    // Group by resource
-    const byResource = {};
-    filteredLog.forEach(item => {
-      if (!byResource[item.resource_type]) {
-        byResource[item.resource_type] = 0;
-      }
-      byResource[item.resource_type] += item.credits_consumed;
-    });
-    
-    // Group by channel
-    const byChannel = {};
-    filteredLog.forEach(item => {
-      if (item.channel_id && item.channel_name) {
-        if (!byChannel[item.channel_id]) {
-          byChannel[item.channel_id] = {
-            channel_id: item.channel_id,
-            channel_name: item.channel_name,
-            credits: 0
-          };
-        }
-        byChannel[item.channel_id].credits += item.credits_consumed;
-      }
-    });
+  const totalPurchased = payments
+    .filter(p => p.status === 'approved')
+    .reduce((s, p) => s + p.credits_amount, 0);
 
-    return {
-      summary: {
-        total_credits: totalCredits,
-        by_operation: Object.entries(byOperation).map(([operation_type, credits]) => ({
-          operation_type,
-          credits
-        })),
-        by_resource: Object.entries(byResource).map(([resource_type, credits]) => ({
-          resource_type,
-          credits
-        })),
-        by_channel: Object.values(byChannel)
-      },
-      log: filteredLog
+  const balance = user?.credits_balance || 0;
+
+  const formatDate = (d) => d
+    ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : '-';
+
+  const statusBadge = (status) => {
+    const map = {
+      approved:   { label: 'Aprovado',   icon: CheckCircle, cls: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' },
+      pending:    { label: 'Pendente',   icon: Clock,        cls: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300' },
+      cancelled:  { label: 'Cancelado',  icon: XCircle,     cls: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' },
+      refunded:   { label: 'Estornado',  icon: XCircle,     cls: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' },
+      rejected:   { label: 'Recusado',   icon: XCircle,     cls: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' },
     };
+    const cfg = map[status] || { label: status, icon: Clock, cls: 'bg-gray-100 text-gray-600' };
+    const Icon = cfg.icon;
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.cls}`}>
+        <Icon size={11} /> {cfg.label}
+      </span>
+    );
   };
 
-  const { summary, log } = getFilteredData();
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getOperationLabel = (type) => {
-    const labels = {
-      'text_generation': 'Geração de Texto',
-      'image_generation': 'Geração de Imagem',
-      'video_generation': 'Geração de Vídeo',
-      'tts': 'Text-to-Speech'
-    };
-    return labels[type] || type;
-  };
-
-  const getResourceLabel = (type) => {
-    const labels = {
-      'post': 'Post',
-      'video': 'Vídeo',
-      'avatar': 'Avatar',
-      'image': 'Imagem'
-    };
-    return labels[type] || type;
-  };
+  const getOperationLabel = (t) => ({ text_generation: 'Geração de Texto', image_generation: 'Geração de Imagem', video_generation: 'Geração de Vídeo', tts: 'Text-to-Speech' }[t] || t);
+  const getResourceLabel  = (t) => ({ post: 'Post', video: 'Vídeo', avatar: 'Avatar', image: 'Imagem' }[t] || t);
 
   const getUsageDisplay = (item) => {
-    // Para texto: mostra tokens
-    if (item.operation_type === 'text_generation' && item.total_tokens > 0) {
-      return item.total_tokens.toLocaleString() + ' tokens';
-    }
-    
-    // Para imagem: mostra quantidade de imagens
-    if (item.operation_type === 'image_generation') {
-      return '1 imagem';
-    }
-    
-    // Para vídeo: calcula segundos baseado no custo (50 créditos/segundo)
-    if (item.operation_type === 'video_generation') {
-      const seconds = Math.round(item.credits_consumed / 50);
-      return `${seconds}s vídeo`;
-    }
-    
-    // Para TTS: mostra caracteres (15 créditos por 1K chars)
-    if (item.operation_type === 'tts') {
-      const chars = Math.round((item.credits_consumed / 15) * 1000);
-      return `${chars} chars`;
-    }
-    
+    if (item.operation_type === 'text_generation' && item.total_tokens > 0) return item.total_tokens.toLocaleString() + ' tokens';
+    if (item.operation_type === 'image_generation') return '1 imagem';
+    if (item.operation_type === 'video_generation') return `${Math.round(item.credits_consumed / 50)}s vídeo`;
+    if (item.operation_type === 'tts') return `${Math.round((item.credits_consumed / 15) * 1000)} chars`;
     return '-';
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader className="animate-spin text-primary-600" size={48} />
-      </div>
-    );
+    return <div className="flex justify-center items-center h-64"><Loader className="animate-spin text-purple-600" size={48} /></div>;
   }
+
+  const filteredLog = getFilteredLog();
+  const filteredConsumed = filteredLog.reduce((s, i) => s + i.credits_consumed, 0);
 
   return (
     <div className="space-y-6">
-      <button
-        onClick={() => navigate('/')}
-        className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-      >
-        <ArrowLeft size={20} />
-        <span>Voltar</span>
+      <button onClick={() => navigate('/')} className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100">
+        <ArrowLeft size={20} /><span>Voltar</span>
       </button>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h1 className="text-3xl font-bold mb-6">Consumo de Créditos</h1>
+        <h1 className="text-3xl font-bold mb-6">Créditos</h1>
 
-        {/* Filters */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
-            <Filter size={20} className="text-gray-600 dark:text-gray-400" />
-            <h2 className="text-xl font-semibold">Filtros</h2>
+        {/* Balance cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-5 rounded-xl shadow">
+            <div className="flex items-center justify-between mb-2">
+              <Wallet size={28} />
+              <span className="text-purple-200 text-sm">Saldo atual</span>
+            </div>
+            <p className="text-3xl font-bold">{balance.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</p>
+            <p className="text-purple-200 text-xs mt-1">créditos disponíveis</p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Tipo de Recurso</label>
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
-              >
-                <option value="all">Todos</option>
-                <option value="post">Posts</option>
-                <option value="video">Vídeos</option>
-                <option value="avatar">Avatares</option>
-              </select>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Canal</label>
-              <select
-                value={selectedChannel}
-                onChange={(e) => setSelectedChannel(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
-              >
-                <option value="all">Todos os Canais</option>
-                {allChannels.map((ch) => (
-                  <option key={ch.channel_id} value={ch.channel_id}>
-                    {ch.channel_name}
-                  </option>
-                ))}
-              </select>
+          <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-5 rounded-xl shadow">
+            <div className="flex items-center justify-between mb-2">
+              <ShoppingCart size={28} />
+              <span className="text-green-200 text-sm">Total comprado</span>
             </div>
+            <p className="text-3xl font-bold">{totalPurchased.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</p>
+            <p className="text-green-200 text-xs mt-1">créditos adquiridos</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-5 rounded-xl shadow">
+            <div className="flex items-center justify-between mb-2">
+              <TrendingDown size={28} />
+              <span className="text-blue-200 text-sm">Total gasto</span>
+            </div>
+            <p className="text-3xl font-bold">{totalConsumed.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</p>
+            <p className="text-blue-200 text-xs mt-1">créditos consumidos</p>
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <DollarSign size={32} />
-              <TrendingUp size={24} />
-            </div>
-            <h3 className="text-lg font-semibold mb-1">Total de Créditos</h3>
-            <p className="text-3xl font-bold">{summary?.total_credits?.toFixed(2) || '0.00'}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <Activity size={32} />
-              <Calendar size={24} />
-            </div>
-            <h3 className="text-lg font-semibold mb-1">Operações</h3>
-            <p className="text-3xl font-bold">{log?.length || 0}</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <Activity size={32} />
-              <Filter size={24} />
-            </div>
-            <h3 className="text-lg font-semibold mb-1">Canais Ativos</h3>
-            <p className="text-3xl font-bold">{summary?.by_channel?.length || 0}</p>
-          </div>
+        {/* Tabs */}
+        <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700 mb-6">
+          {[
+            { id: 'overview', label: 'Consumo' },
+            { id: 'purchases', label: 'Compras' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* Charts */}
-        {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {/* By Operation Type */}
-            <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl">
-              <h3 className="text-lg font-semibold mb-4">Por Tipo de Operação</h3>
-              <div className="space-y-3">
-                {summary.by_operation?.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
-                    <span className="text-sm">{getOperationLabel(item.operation_type)}</span>
-                    <span className="font-semibold">{item.credits.toFixed(2)}</span>
-                  </div>
-                ))}
+        {/* CONSUMO tab */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium mb-1">Tipo de Recurso</label>
+                <select value={filterType} onChange={e => setFilterType(e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm">
+                  <option value="all">Todos</option>
+                  <option value="post">Posts</option>
+                  <option value="video">Vídeos</option>
+                  <option value="avatar">Avatares</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Canal</label>
+                <select value={selectedChannel} onChange={e => setSelectedChannel(e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm">
+                  <option value="all">Todos os Canais</option>
+                  {allChannels.map(ch => <option key={ch.channel_id} value={ch.channel_id}>{ch.channel_name}</option>)}
+                </select>
               </div>
             </div>
 
-            {/* By Resource Type */}
-            <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl">
-              <h3 className="text-lg font-semibold mb-4">Por Tipo de Recurso</h3>
-              <div className="space-y-3">
-                {summary.by_resource?.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
-                    <span className="text-sm">{getResourceLabel(item.resource_type)}</span>
-                    <span className="font-semibold">{item.credits.toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              {filteredLog.length} operações — <strong>{filteredConsumed.toFixed(2)} créditos</strong> gastos
+            </p>
+
+            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-700/50">
+                  <tr>
+                    {['Data', 'Canal', 'Recurso', 'Operação', 'Uso', 'Créditos'].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {filteredLog.map(item => (
+                    <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400">{formatDate(item.created_at)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">{item.channel_name || '-'}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                          {getResourceLabel(item.resource_type)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">{getOperationLabel(item.operation_type)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-500 dark:text-gray-400">{getUsageDisplay(item)}</td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right font-semibold text-blue-600 dark:text-blue-400">
+                        {item.credits_consumed.toFixed(4)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filteredLog.length === 0 && <p className="text-center py-10 text-gray-500">Nenhum registro encontrado</p>}
             </div>
-          </div>
+          </>
         )}
 
-        {/* By Channel */}
-        {summary?.by_channel && summary.by_channel.length > 0 && (
-          <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-xl mb-8">
-            <h3 className="text-lg font-semibold mb-4">Consumo por Canal</h3>
-            <div className="space-y-3">
-              {summary.by_channel.map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{item.channel_name}</span>
-                  <span className="font-semibold text-blue-600 dark:text-blue-400">{item.credits.toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Log Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Histórico Detalhado</h2>
-        </div>
-        
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700/50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Data
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Canal
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Recurso
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Operação
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Modelo
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Uso
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  Créditos
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {log.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {formatDate(item.created_at)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {item.channel_name || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200">
-                      {getResourceLabel(item.resource_type)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {getOperationLabel(item.operation_type)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-600 dark:text-gray-400">
-                    {item.model_name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-400">
-                    {getUsageDisplay(item)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-semibold text-blue-600 dark:text-blue-400">
-                    {item.credits_consumed.toFixed(4)}
-                  </td>
+        {/* COMPRAS tab */}
+        {activeTab === 'purchases' && (
+          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-700/50">
+                <tr>
+                  {['Data', 'Valor (R$)', 'Créditos', 'Status'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {log.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400">Nenhum registro encontrado</p>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {payments.map(p => (
+                  <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                    <td className="px-4 py-3 whitespace-nowrap text-gray-600 dark:text-gray-400">{formatDate(p.created_at)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap font-semibold">R$ {p.amount.toFixed(2)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap font-semibold text-purple-600 dark:text-purple-400">
+                      {p.credits_amount.toLocaleString('pt-BR')}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">{statusBadge(p.status)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {payments.length === 0 && <p className="text-center py-10 text-gray-500">Nenhuma compra encontrada</p>}
           </div>
         )}
       </div>

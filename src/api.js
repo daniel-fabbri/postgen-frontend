@@ -139,6 +139,7 @@ export const paymentsAPI = {
   create: (amount) => api.post('/payments/create', { amount }),
   getStatus: (paymentId) => api.get(`/payments/${paymentId}`),
   getRates: () => api.get('/payments/rates'),
+  listMy: () => api.get('/payments/my'),
 };
 
 export const usersAPI = {
@@ -149,6 +150,7 @@ export const usersAPI = {
 export const adminAPI = {
   getRates: () => api.get('/admin/rates'),
   updateRates: (credits_per_real, initial_credits) => api.put('/admin/rates', { credits_per_real, initial_credits }),
+  resetUserCredits: (userId) => api.post(`/admin/users/${userId}/reset-credits`),
 };
 
 export default api;
