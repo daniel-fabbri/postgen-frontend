@@ -295,11 +295,11 @@ export default function BuyCreditsPage() {
                 Você receberá:
               </span>
               <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                {(parseFloat(amount || 0) * creditsPerReal).toFixed(2)} créditos
+                {(parseFloat(amount || 0) * creditsPerReal).toLocaleString('pt-BR')} créditos
               </span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              💡 R$ 1,00 = {creditsPerReal.toFixed(4)} crédito{creditsPerReal !== 1 ? 's' : ''}
+              💡 R$ 1,00 = {creditsPerReal.toLocaleString('pt-BR')} créditos
             </p>
           </div>
 

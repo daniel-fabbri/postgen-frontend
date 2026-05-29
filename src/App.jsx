@@ -39,8 +39,8 @@ function Navigation() {
   const { user, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [totalConsumed, setTotalConsumed] = useState(0);
 
-  // Fechar dropdown ao clicar fora
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -50,6 +50,17 @@ function Navigation() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    const token = localStorage.getItem('postgen_token');
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8004/api'}/credits/summary`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.json())
+      .then(d => setTotalConsumed(d.total_credits || 0))
+      .catch(() => {});
+  }, [user]);
 
   if (!user) return null;
 
@@ -71,13 +82,15 @@ function Navigation() {
             </Link>
           </div>
           <div className="flex items-center gap-3">
-            {/* Botão Comprar Créditos */}
+            {/* Botão de créditos */}
             <Link
               to="/buy-credits"
               className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all transform hover:scale-105 font-semibold shadow-md"
             >
               <CreditCard className="w-4 h-4" />
-              <span className="hidden sm:inline">Comprar Créditos</span>
+              <span className="hidden sm:inline text-sm">
+                {Math.round(totalConsumed)}/{Math.round(totalConsumed + (user.credits_balance || 0))}
+              </span>
             </Link>
             
             {/* Dropdown de Perfil */}

@@ -177,26 +177,29 @@ function UsersTab() {
 function RatesTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [markup, setMarkup] = useState('0');
+  const [creditsPerReal, setCreditsPerReal] = useState('1');
+  const [initialCredits, setInitialCredits] = useState('0');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     adminAPI.getRates()
-      .then(r => setMarkup(String(r.data.markup_percentage)))
+      .then(r => {
+        setCreditsPerReal(String(r.data.credits_per_real));
+        setInitialCredits(String(r.data.initial_credits));
+      })
       .catch(() => setError('Erro ao carregar taxas'))
       .finally(() => setLoading(false));
   }, []);
 
-  const markupNum = parseFloat(markup) || 0;
-  const creditsPerReal = markupNum >= 0 ? 1 / (1 + markupNum / 100) : 0;
-  const realPerCredit = markupNum >= 0 ? 1 + markupNum / 100 : 0;
+  const cpr = parseFloat(creditsPerReal) || 0;
+  const realPerCredit = cpr > 0 ? 1 / cpr : 0;
 
   const handleSave = async () => {
     setError('');
     setSaving(true);
     try {
-      await adminAPI.updateRates(markupNum);
+      await adminAPI.updateRates(cpr, parseFloat(initialCredits) || 0);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch (e) {
@@ -214,7 +217,7 @@ function RatesTab() {
     <div className="max-w-lg">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">Configuração de Taxas</h2>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-        Define o markup cobrado sobre o custo base. O valor é aplicado em todos os novos pagamentos.
+        Controla a conversão de R$ em créditos e os créditos dados a novos usuários.
       </p>
 
       {error && (
@@ -224,46 +227,61 @@ function RatesTab() {
         </div>
       )}
 
-      {/* Markup input */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          Markup (%)
-        </label>
-        <div className="relative">
+      <div className="space-y-5 mb-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Créditos por R$ 1,00
+          </label>
           <input
             type="number"
-            value={markup}
-            onChange={e => setMarkup(e.target.value)}
+            value={creditsPerReal}
+            onChange={e => setCreditsPerReal(e.target.value)}
+            min="0.0001"
+            step="1"
+            className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xl font-bold transition-colors"
+            placeholder="500"
+          />
+          <p className="text-xs text-gray-400 mt-1">Ex: 500 → R$ 1,00 dá 500 créditos</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Créditos iniciais (novos usuários)
+          </label>
+          <input
+            type="number"
+            value={initialCredits}
+            onChange={e => setInitialCredits(e.target.value)}
             min="0"
             step="1"
-            className="w-full pl-4 pr-12 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xl font-bold transition-colors"
-            placeholder="0"
+            className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xl font-bold transition-colors"
+            placeholder="100"
           />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl font-bold">%</span>
+          <p className="text-xs text-gray-400 mt-1">Créditos de boas-vindas no cadastro</p>
         </div>
       </div>
 
       {/* Preview */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-5 mb-6 space-y-3">
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-5 mb-6">
         <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Preview da conversão</p>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-2">
           <span className="text-gray-600 dark:text-gray-400 text-sm">R$ 1,00 rende</span>
           <span className="text-lg font-bold text-purple-600 dark:text-purple-400">
-            {creditsPerReal.toFixed(4)} créditos
+            {cpr.toLocaleString('pt-BR')} créditos
           </span>
         </div>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-3">
           <span className="text-gray-600 dark:text-gray-400 text-sm">1 crédito custa</span>
           <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-            R$ {realPerCredit.toFixed(4)}
+            R$ {realPerCredit.toFixed(6)}
           </span>
         </div>
-        <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+        <div className="border-t border-gray-200 dark:border-gray-600 pt-3 space-y-1">
           {[10, 50, 100, 200].map(v => (
-            <div key={v} className="flex justify-between items-center py-1">
+            <div key={v} className="flex justify-between items-center">
               <span className="text-gray-500 dark:text-gray-400 text-sm">R$ {v},00</span>
               <span className="text-gray-700 dark:text-gray-300 text-sm font-semibold">
-                → {(v * creditsPerReal).toFixed(2)} créditos
+                → {(v * cpr).toLocaleString('pt-BR')} créditos
               </span>
             </div>
           ))}

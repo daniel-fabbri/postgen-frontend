@@ -148,7 +148,7 @@ export const usersAPI = {
 
 export const adminAPI = {
   getRates: () => api.get('/admin/rates'),
-  updateRates: (markup_percentage) => api.put('/admin/rates', { markup_percentage }),
+  updateRates: (credits_per_real, initial_credits) => api.put('/admin/rates', { credits_per_real, initial_credits }),
 };
 
 export default api;
