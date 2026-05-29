@@ -138,11 +138,17 @@ export const insightsAPI = {
 export const paymentsAPI = {
   create: (amount) => api.post('/payments/create', { amount }),
   getStatus: (paymentId) => api.get(`/payments/${paymentId}`),
+  getRates: () => api.get('/payments/rates'),
 };
 
 export const usersAPI = {
   updateProfile: (data) => api.put('/users/profile', data),
   getAll: () => api.get('/admin/users'),
+};
+
+export const adminAPI = {
+  getRates: () => api.get('/admin/rates'),
+  updateRates: (markup_percentage) => api.put('/admin/rates', { markup_percentage }),
 };
 
 export default api;

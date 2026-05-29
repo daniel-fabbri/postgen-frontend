@@ -13,6 +13,11 @@ export default function BuyCreditsPage() {
   const [paymentData, setPaymentData] = useState(null);
   const [paymentStatus, setPaymentStatus] = useState('pending');
   const [copied, setCopied] = useState(false);
+  const [creditsPerReal, setCreditsPerReal] = useState(1);
+
+  useEffect(() => {
+    paymentsAPI.getRates().then(r => setCreditsPerReal(r.data.credits_per_real)).catch(() => {});
+  }, []);
 
   // Polling para verificar status do pagamento
   useEffect(() => {
@@ -290,11 +295,11 @@ export default function BuyCreditsPage() {
                 Você receberá:
               </span>
               <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                {parseFloat(amount || 0).toFixed(2)} créditos
+                {(parseFloat(amount || 0) * creditsPerReal).toFixed(2)} créditos
               </span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              💡 1 Real = 1 Crédito
+              💡 R$ 1,00 = {creditsPerReal.toFixed(4)} crédito{creditsPerReal !== 1 ? 's' : ''}
             </p>
           </div>
 
