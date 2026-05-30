@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { useTheme } from './ThemeContext';
 import { useAuth, AuthProvider } from './AuthContext';
-import { Moon, Sun, Sparkles, LogOut, User, DollarSign, UserCircle, Settings, Shield, ChevronDown, CreditCard } from 'lucide-react';
+import { Moon, Sun, Sparkles, LogOut, User, DollarSign, UserCircle, Settings, Shield, ChevronDown, CreditCard, Layers } from 'lucide-react';
 import ChannelsPage from './pages/ChannelsPage';
 import CreateChannelPage from './pages/CreateChannelPage';
 import EditChannelPage from './pages/EditChannelPage';
@@ -108,6 +108,14 @@ function Navigation() {
 
               {dropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                  <Link
+                    to="/channels"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <Layers className="w-4 h-4" />
+                    <span>Meus Canais</span>
+                  </Link>
                   <Link
                     to="/profile"
                     onClick={() => setDropdownOpen(false)}
