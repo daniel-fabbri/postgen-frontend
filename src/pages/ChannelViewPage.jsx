@@ -160,9 +160,10 @@ const ChannelViewPage = () => {
   const handleSaveConnections = async () => {
     try {
       setSaving(true);
-      await channelsAPI.update(id, { 
+      await channelsAPI.update(id, {
+        ...channel,
         auto_reply_enabled: formData.auto_reply_enabled,
-        auto_reply_prompt: formData.auto_reply_prompt 
+        auto_reply_prompt: formData.auto_reply_prompt,
       });
       await loadData();
       setShowConnectionsModal(false);

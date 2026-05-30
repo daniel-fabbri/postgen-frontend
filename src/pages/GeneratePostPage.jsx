@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { channelsAPI, postsAPI } from '../api';
-import { Loader, Sparkles, Send, ArrowLeft, RefreshCw, Copy, CheckCheck, ImageIcon } from 'lucide-react';
+import { Loader, Sparkles, Send, ArrowLeft, RefreshCw, Copy, CheckCheck, ImageIcon, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import CreditGate from '../components/CreditGate';
 
@@ -173,7 +173,7 @@ const GeneratePostPage = () => {
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="flex flex-col md:flex-row">
             {/* Left: Image */}
-            <div className="md:w-1/2 bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4 min-h-[300px]">
+            <div className="md:w-1/2 bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4 min-h-[300px] gap-3">
               {imageUrl ? (
                 <div className="w-full aspect-square rounded-xl overflow-hidden shadow-md">
                   <img
@@ -185,6 +185,12 @@ const GeneratePostPage = () => {
               ) : (
                 <div className="w-full aspect-square rounded-xl bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
                   <ImageIcon size={48} className="text-gray-400" />
+                </div>
+              )}
+              {post.image_error && (
+                <div className="w-full flex items-start gap-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                  <span>{post.image_error}</span>
                 </div>
               )}
             </div>
