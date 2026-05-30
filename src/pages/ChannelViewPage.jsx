@@ -69,6 +69,8 @@ const ChannelViewPage = () => {
     instagram_user_id: '',
     instagram_access_token: '',
     image_model: 'mai',
+    auto_reply_enabled: false,
+    auto_reply_prompt: '',
   });
 
   // Unified sorted feed: newest first
@@ -106,6 +108,8 @@ const ChannelViewPage = () => {
         instagram_user_id: channelRes.data.instagram_user_id || '',
         instagram_access_token: channelRes.data.instagram_access_token || '',
         image_model: channelRes.data.image_model || 'mai',
+        auto_reply_enabled: channelRes.data.auto_reply_enabled || false,
+        auto_reply_prompt: channelRes.data.auto_reply_prompt || '',
       });
       setPosts(postsRes.data.filter(p => p.channel_id === id));
       setVideos(videosRes.data);
@@ -147,6 +151,23 @@ const ChannelViewPage = () => {
       setShowEditModal(false);
     } catch (error) {
       alert('Erro ao salvar canal');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveConnections = async () => {
+    try {
+      setSaving(true);
+      await channelsAPI.update(id, { 
+        auto_reply_enabled: formData.auto_reply_enabled,
+        auto_reply_prompt: formData.auto_reply_prompt 
+      });
+      await loadData();
+      setShowConnectionsModal(false);
+      setIgMessage(null);
+    } catch (error) {
+      setIgMessage({ type: 'error', text: 'Erro ao salvar configurações' });
     } finally {
       setSaving(false);
     }
@@ -842,10 +863,7 @@ const ChannelViewPage = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-xl font-bold">Conexões</h2>
-              <button onClick={() => {
-                setShowConnectionsModal(false);
-                setIgMessage(null);
-              }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+              <button onClick={handleSaveConnections} disabled={saving} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50">
                 <X size={20} />
               </button>
             </div>
@@ -871,17 +889,68 @@ const ChannelViewPage = () => {
                 )}
 
                 {formData.instagram_user_id && formData.instagram_access_token ? (
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                    <CheckCircle className="text-green-600 dark:text-green-400 shrink-0" size={20} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-green-800 dark:text-green-300">Conectado</p>
-                      <p className="text-sm text-green-700 dark:text-green-400 font-mono truncate">ID: {formData.instagram_user_id}</p>
+                  <>
+                    <div className="flex items-center gap-3 p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                      <CheckCircle className="text-green-600 dark:text-green-400 shrink-0" size={20} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-green-800 dark:text-green-300">Conectado</p>
+                        <p className="text-sm text-green-700 dark:text-green-400 font-mono truncate">ID: {formData.instagram_user_id}</p>
+                      </div>
+                      <button type="button" onClick={handleDisconnectIG}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-700 font-medium">
+                        <Unlink size={14} /> Desconectar
+                      </button>
                     </div>
-                    <button type="button" onClick={handleDisconnectIG}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-700 font-medium">
-                      <Unlink size={14} /> Desconectar
-                    </button>
-                  </div>
+
+                    {/* Auto-Reply Toggle */}
+                    <div className="mt-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <Sparkles className="text-blue-600 dark:text-blue-400" size={16} />
+                            <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                              Respostas Automáticas com IA
+                            </h3>
+                          </div>
+                          <p className="text-xs text-blue-700 dark:text-blue-300 mb-1.5">
+                            Ative para responder automaticamente comentários e mensagens diretas usando inteligência artificial.
+                          </p>
+                          <p className="text-xs text-blue-600 dark:text-blue-400">
+                            ⚠️ Requer configuração do webhook do Instagram no seu Facebook App.
+                          </p>
+                        </div>
+                        
+                        <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                          <input
+                            type="checkbox"
+                            checked={formData.auto_reply_enabled}
+                            onChange={(e) => setFormData({ ...formData, auto_reply_enabled: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-3 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Auto-Reply Prompt - só mostra se auto_reply_enabled estiver ativo */}
+                    {formData.auto_reply_enabled && (
+                      <div className="mt-3">
+                        <label className="block text-xs font-medium mb-1.5 text-gray-700 dark:text-gray-300">
+                          Como Responder (Prompt Personalizado)
+                        </label>
+                        <textarea
+                          value={formData.auto_reply_prompt || ''}
+                          onChange={(e) => setFormData({ ...formData, auto_reply_prompt: e.target.value })}
+                          rows={4}
+                          className="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
+                          placeholder="Exemplo: Você é um assistente amigável que responde no Instagram. Seja breve, use emojis ocasionalmente, e sempre mantenha um tom profissional e educado. Responda em português..."
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                          Instrução personalizada para a IA. Se deixar vazio, usará o prompt padrão.
+                        </p>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <button type="button" onClick={handleConnectIG} disabled={connectingIG}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-gradient-to-r from-purple-500 via-pink-500 to-orange-400 text-white text-base font-semibold hover:shadow-lg transition-all disabled:opacity-50">
@@ -895,12 +964,9 @@ const ChannelViewPage = () => {
               </div>
             </div>
             <div className="flex justify-end px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-              <button onClick={() => {
-                setShowConnectionsModal(false);
-                setIgMessage(null);
-              }}
-                className="px-5 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                Fechar
+              <button onClick={handleSaveConnections} disabled={saving}
+                className="px-5 py-2 text-sm bg-gradient-to-r from-primary-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-2">
+                {saving ? <><Loader className="animate-spin" size={14} /><span>Salvando...</span></> : <span>Salvar e Fechar</span>}
               </button>
             </div>
           </div>
