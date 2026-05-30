@@ -221,72 +221,74 @@ const EditChannelPage = () => {
             )}
 
             {formData.instagram_user_id && formData.instagram_access_token && formData.instagram_access_token !== '' ? (
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                <CheckCircle className="text-green-600 dark:text-green-400 shrink-0" size={20} />
-                <div className="flex-1">
-                  <p className="font-semibold text-green-800 dark:text-green-300">Instagram conectado</p>
-                  <p className="text-sm text-green-700 dark:text-green-400 font-mono">ID: {formData.instagram_user_id}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleDisconnectIG}
-                  disabled={saving}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-700 transition-colors"
-                >
-                  <Unlink size={14} /> Desconectar
-                </button>
-              </div>
-
-              {/* Auto-Reply Toggle */}
-              <div className="mt-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                <div className="flex items-start justify-between gap-4">
+              <>
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                  <CheckCircle className="text-green-600 dark:text-green-400 shrink-0" size={20} />
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Sparkles className="text-blue-600 dark:text-blue-400" size={18} />
-                      <h3 className="font-semibold text-blue-900 dark:text-blue-100">
-                        Respostas Automáticas com IA
-                      </h3>
+                    <p className="font-semibold text-green-800 dark:text-green-300">Instagram conectado</p>
+                    <p className="text-sm text-green-700 dark:text-green-400 font-mono">ID: {formData.instagram_user_id}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDisconnectIG}
+                    disabled={saving}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-700 transition-colors"
+                  >
+                    <Unlink size={14} /> Desconectar
+                  </button>
+                </div>
+
+                {/* Auto-Reply Toggle */}
+                <div className="mt-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="text-blue-600 dark:text-blue-400" size={18} />
+                        <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+                          Respostas Automáticas com IA
+                        </h3>
+                      </div>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                        Ative para responder automaticamente comentários e mensagens diretas usando inteligência artificial.
+                      </p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400">
+                        ⚠️ Requer configuração do webhook do Instagram no seu Facebook App. Consulte a documentação para instruções.
+                      </p>
                     </div>
-                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
-                      Ative para responder automaticamente comentários e mensagens diretas usando inteligência artificial.
-                    </p>
-                    <p className="text-xs text-blue-600 dark:text-blue-400">
-                      ⚠️ Requer configuração do webhook do Instagram no seu Facebook App. Consulte a documentação para instruções.
+                    
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                      <input
+                        type="checkbox"
+                        checked={formData.auto_reply_enabled}
+                        onChange={(e) => setFormData({ ...formData, auto_reply_enabled: e.target.checked })}
+                        disabled={saving}
+                        className="sr-only peer"
+                      />
+                      <div className="w-14 h-7 bg-gray-300 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Auto-Reply Prompt - só mostra se auto_reply_enabled estiver ativo */}
+                {formData.auto_reply_enabled && (
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium mb-2">
+                      Como Responder (Prompt para Respostas Automáticas)
+                    </label>
+                    <textarea
+                      value={formData.auto_reply_prompt}
+                      onChange={(e) => setFormData({ ...formData, auto_reply_prompt: e.target.value })}
+                      rows={6}
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
+                      placeholder="Exemplo: Você é um assistente amigável que responde no Instagram. Seja breve, use emojis ocasionalmente, e sempre mantenha um tom profissional e educado. Responda em português..."
+                      disabled={saving}
+                    />
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      Instrução personalizada para a IA gerar respostas automáticas a comentários e mensagens. Se deixar vazio, usará o prompt padrão.
                     </p>
                   </div>
-                  
-                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                    <input
-                      type="checkbox"
-                      checked={formData.auto_reply_enabled}
-                      onChange={(e) => setFormData({ ...formData, auto_reply_enabled: e.target.checked })}
-                      disabled={saving}
-                      className="sr-only peer"
-                    />
-                    <div className="w-14 h-7 bg-gray-300 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-              </div>
-
-              {/* Auto-Reply Prompt - só mostra se auto_reply_enabled estiver ativo */}
-              {formData.auto_reply_enabled && (
-                <div className="mt-4">
-                  <label className="block text-sm font-medium mb-2">
-                    Como Responder (Prompt para Respostas Automáticas)
-                  </label>
-                  <textarea
-                    value={formData.auto_reply_prompt}
-                    onChange={(e) => setFormData({ ...formData, auto_reply_prompt: e.target.value })}
-                    rows={6}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
-                    placeholder="Exemplo: Você é um assistente amigável que responde no Instagram. Seja breve, use emojis ocasionalmente, e sempre mantenha um tom profissional e educado. Responda em português..."
-                    disabled={saving}
-                  />
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    Instrução personalizada para a IA gerar respostas automáticas a comentários e mensagens. Se deixar vazio, usará o prompt padrão.
-                  </p>
-                </div>
-              )}
+                )}
+              </>
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
