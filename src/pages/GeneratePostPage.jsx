@@ -8,10 +8,10 @@ import CreditGate from '../components/CreditGate';
 const GeneratePostPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, isAdmin } = useAuth();
   const balance = user?.credits_balance || 0;
   const POST_MIN_CREDITS = 32;
-  const hasCredits = balance >= POST_MIN_CREDITS;
+  const hasCredits = isAdmin || balance >= POST_MIN_CREDITS;
   const [channel, setChannel] = useState(null);
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(false);

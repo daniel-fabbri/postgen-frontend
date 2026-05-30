@@ -23,7 +23,7 @@ const SIZES = [
 const VideoEditorPage = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, isAdmin } = useAuth();
   const balance = user?.credits_balance || 0;
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +34,7 @@ const VideoEditorPage = () => {
   const [selectedDuration, setSelectedDuration] = useState(4);
   const [selectedSize, setSelectedSize] = useState('720x1280');
   const costForClip = selectedDuration * 50;
-  const hasCredits = balance >= costForClip;
+  const hasCredits = isAdmin || balance >= costForClip;
   const [previewClip, setPreviewClip] = useState(null);
   const [promptOpenFor, setPromptOpenFor] = useState(null);
 

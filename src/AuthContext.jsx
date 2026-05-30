@@ -60,8 +60,10 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const isAdmin = user?.email === 'daniel.fabbri@avanade.com';
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, refreshing, login, register, logout, updateUser, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, loading, refreshing, isAdmin, login, register, logout, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

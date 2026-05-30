@@ -14,13 +14,14 @@ import {
 const ChannelViewPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, refreshUser, refreshing } = useAuth();
+  const { user, refreshUser, refreshing, isAdmin } = useAuth();
   const balance = user?.credits_balance || 0;
   // Bloquear botões enquanto está fazendo refresh do saldo (previne race condition)
-  const canPost    = !refreshing && balance >= 32;
-  const canVideo   = !refreshing && balance >= 200;
-  const canAvatar  = !refreshing && balance >= 30;
-  const canImage   = !refreshing && balance >= 30;
+  // Admin sempre tem acesso liberado, sem verificação de saldo
+  const canPost    = isAdmin || (!refreshing && balance >= 32);
+  const canVideo   = isAdmin || (!refreshing && balance >= 200);
+  const canAvatar  = isAdmin || (!refreshing && balance >= 30);
+  const canImage   = isAdmin || (!refreshing && balance >= 30);
   const [channel, setChannel] = useState(null);
   const [posts, setPosts] = useState([]);
   const [videos, setVideos] = useState([]);
