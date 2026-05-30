@@ -14,6 +14,8 @@ const EditChannelPage = () => {
     suggested_image_url: '',
     instagram_user_id: '',
     instagram_access_token: '',
+    auto_reply_enabled: false,
+    auto_reply_prompt: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -46,6 +48,8 @@ const EditChannelPage = () => {
         suggested_image_url: response.data.suggested_image_url || '',
         instagram_user_id: response.data.instagram_user_id || '',
         instagram_access_token: response.data.instagram_access_token || '',
+        auto_reply_enabled: response.data.auto_reply_enabled || false,
+        auto_reply_prompt: response.data.auto_reply_prompt || '',
       });
     } catch (error) {
       console.error('Error loading channel:', error);
@@ -232,6 +236,57 @@ const EditChannelPage = () => {
                   <Unlink size={14} /> Desconectar
                 </button>
               </div>
+
+              {/* Auto-Reply Toggle */}
+              <div className="mt-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Sparkles className="text-blue-600 dark:text-blue-400" size={18} />
+                      <h3 className="font-semibold text-blue-900 dark:text-blue-100">
+                        Respostas Automáticas com IA
+                      </h3>
+                    </div>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                      Ative para responder automaticamente comentários e mensagens diretas usando inteligência artificial.
+                    </p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400">
+                      ⚠️ Requer configuração do webhook do Instagram no seu Facebook App. Consulte a documentação para instruções.
+                    </p>
+                  </div>
+                  
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={formData.auto_reply_enabled}
+                      onChange={(e) => setFormData({ ...formData, auto_reply_enabled: e.target.checked })}
+                      disabled={saving}
+                      className="sr-only peer"
+                    />
+                    <div className="w-14 h-7 bg-gray-300 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Auto-Reply Prompt - só mostra se auto_reply_enabled estiver ativo */}
+              {formData.auto_reply_enabled && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium mb-2">
+                    Como Responder (Prompt para Respostas Automáticas)
+                  </label>
+                  <textarea
+                    value={formData.auto_reply_prompt}
+                    onChange={(e) => setFormData({ ...formData, auto_reply_prompt: e.target.value })}
+                    rows={6}
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
+                    placeholder="Exemplo: Você é um assistente amigável que responde no Instagram. Seja breve, use emojis ocasionalmente, e sempre mantenha um tom profissional e educado. Responda em português..."
+                    disabled={saving}
+                  />
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    Instrução personalizada para a IA gerar respostas automáticas a comentários e mensagens. Se deixar vazio, usará o prompt padrão.
+                  </p>
+                </div>
+              )}
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
