@@ -54,7 +54,7 @@ const Tooltip = ({ text }) => {
 const TOOLTIPS = {
   likes: 'Número de curtidas que o post recebeu no Instagram.',
   comments: 'Número de comentários deixados no post.',
-  reach: 'Contas únicas que viram o post pelo menos uma vez. Requer reconexão do Instagram com a permissão instagram_manage_insights.',
+  reach: 'Contas únicas que viram o post pelo menos uma vez. Requer reconexão do Instagram com a permissão instagram_business_manage_insights.',
   impressions: 'Total de visualizações, incluindo múltiplas do mesmo usuário. Requer a mesma reconexão do Instagram.',
   saved: 'Número de vezes que usuários salvaram este post.',
   shares: 'Número de vezes que o post foi compartilhado (enviado via DM ou story).',
@@ -348,7 +348,7 @@ const ChannelDashboardPage = () => {
               valueLabel="contas únicas"
               total={data.total_reach || null}
               tooltipKey="reach"
-              emptyNote="Alcance requer reconexão do Instagram em Editar Canal (permissão instagram_manage_insights)."
+              emptyNote="Alcance requer reconexão do Instagram em Editar Canal (permissão instagram_business_manage_insights)."
             />
             <LeaderboardCard
               title="Top por Impressões"

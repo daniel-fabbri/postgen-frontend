@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem('postgen_token'));
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (token) {
@@ -49,11 +50,18 @@ export function AuthProvider({ children }) {
   };
 
   const refreshUser = async () => {
-    try { setUser((await authAPI.me()).data); } catch {}
+    if (refreshing) return; // Evitar múltiplas chamadas simultâneas
+    try {
+      setRefreshing(true);
+      setUser((await authAPI.me()).data);
+    } catch {}
+    finally {
+      setRefreshing(false);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateUser, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, loading, refreshing, login, register, logout, updateUser, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

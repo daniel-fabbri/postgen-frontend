@@ -14,12 +14,13 @@ import {
 const ChannelViewPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, refreshing } = useAuth();
   const balance = user?.credits_balance || 0;
-  const canPost    = balance >= 32;
-  const canVideo   = balance >= 200;
-  const canAvatar  = balance >= 30;
-  const canImage   = balance >= 30;
+  // Bloquear botões enquanto está fazendo refresh do saldo (previne race condition)
+  const canPost    = !refreshing && balance >= 32;
+  const canVideo   = !refreshing && balance >= 200;
+  const canAvatar  = !refreshing && balance >= 30;
+  const canImage   = !refreshing && balance >= 30;
   const [channel, setChannel] = useState(null);
   const [posts, setPosts] = useState([]);
   const [videos, setVideos] = useState([]);
