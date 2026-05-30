@@ -338,7 +338,6 @@ const ChannelDashboardPage = () => {
               valueLabel="compartilhamentos"
               total={data.total_shares || null}
               tooltipKey="shares"
-              emptyNote="Dados de compartilhamentos não disponíveis. Reconecte seu Instagram em Editar Canal para ativar."
             />
             <LeaderboardCard
               title="Top por Alcance"
@@ -358,7 +357,7 @@ const ChannelDashboardPage = () => {
               valueLabel="visualizações"
               total={data.total_impressions || null}
               tooltipKey="impressions"
-              emptyNote="Impressões requerem a mesma reconexão do Instagram."
+              emptyNote="⚠️ A API do Instagram não fornece impressões para posts IMAGE/VIDEO. Essa métrica está disponível apenas para Stories e Reels."
             />
           </div>
         </>
