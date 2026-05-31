@@ -865,7 +865,7 @@ const ChannelViewPage = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-lg w-full">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-xl font-bold">Conexões</h2>
-              <button onClick={handleSaveConnections} disabled={saving} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50">
+              <button onClick={() => setShowConnectionsModal(false)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
                 <X size={20} />
               </button>
             </div>
