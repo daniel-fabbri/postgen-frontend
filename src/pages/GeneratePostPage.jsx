@@ -20,6 +20,8 @@ const GeneratePostPage = () => {
   const [additionalPrompt, setAdditionalPrompt] = useState('');
   const [copied, setCopied] = useState(false);
   const [published, setPublished] = useState(false);
+  const [applyingFace, setApplyingFace] = useState(false);
+  const [postImageUrl, setPostImageUrl] = useState(null);
 
   useEffect(() => {
     loadChannel();
@@ -42,9 +44,11 @@ const GeneratePostPage = () => {
     try {
       setLoading(true);
       setPost(null);
+      setPostImageUrl(null);
       setPublished(false);
       const response = await postsAPI.generate(id, additionalPrompt);
       setPost(response.data);
+      setPostImageUrl(response.data.image_url);
       await refreshUser();
     } catch (error) {
       console.error('Error generating post:', error);
@@ -69,6 +73,20 @@ const GeneratePostPage = () => {
     }
   };
 
+  const handleApplyFace = async () => {
+    if (!post?.id) return;
+    try {
+      setApplyingFace(true);
+      const response = await postsAPI.applyFace(post.id, id);
+      setPostImageUrl(response.data.image_url);
+      setPost(prev => ({ ...prev, image_url: response.data.image_url, image_path: response.data.image_path }));
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Erro ao aproximar rosto');
+    } finally {
+      setApplyingFace(false);
+    }
+  };
+
   const handleCopyCaption = () => {
     if (!post?.text) return;
     navigator.clipboard.writeText(post.text);
@@ -85,8 +103,6 @@ const GeneratePostPage = () => {
   }
 
   if (!channel) return null;
-
-  const imageUrl = post?.image_url || null;
 
   return (
     <div className="max-w-5xl mx-auto space-y-6">
@@ -120,8 +136,8 @@ const GeneratePostPage = () => {
         </div>
       </div>
 
-      {/* Prompt input — always visible */}
-      {!loading && (
+      {/* Prompt input — hidden after post is generated */}
+      {!loading && !post && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Contexto adicional <span className="font-normal text-gray-400">(opcional)</span>
@@ -140,7 +156,7 @@ const GeneratePostPage = () => {
               className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-purple-200 dark:hover:shadow-purple-900/30 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Sparkles size={18} />
-              {post ? 'Gerar novo post' : 'Gerar post com IA'}
+              Gerar post com IA
             </button>
           </CreditGate>
         </div>
@@ -168,16 +184,16 @@ const GeneratePostPage = () => {
         </div>
       )}
 
-      {/* Generated post — two-column layout */}
+      {/* Generated post */}
       {post && !loading && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="flex flex-col md:flex-row">
             {/* Left: Image */}
             <div className="md:w-1/2 bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4 min-h-[300px] gap-3">
-              {imageUrl ? (
+              {postImageUrl ? (
                 <div className="w-full aspect-square rounded-xl overflow-hidden shadow-md">
                   <img
-                    src={imageUrl}
+                    src={postImageUrl}
                     alt="Post gerado"
                     className="w-full h-full object-cover"
                   />
@@ -245,25 +261,33 @@ const GeneratePostPage = () => {
                 ) : (
                   <button
                     onClick={handlePublish}
-                    disabled={publishing}
+                    disabled={publishing || applyingFace}
                     className="flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg hover:shadow-purple-200 dark:hover:shadow-purple-900/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {publishing ? (
-                      <>
-                        <Loader className="animate-spin" size={16} />
-                        Publicando...
-                      </>
+                      <><Loader className="animate-spin" size={16} />Publicando...</>
                     ) : (
-                      <>
-                        <Send size={16} />
-                        Publicar no Instagram
-                      </>
+                      <><Send size={16} />Publicar no Instagram</>
                     )}
                   </button>
                 )}
+
+                {/* Aproximar rosto */}
+                <button
+                  onClick={handleApplyFace}
+                  disabled={applyingFace || publishing}
+                  className="flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {applyingFace ? (
+                    <><Loader className="animate-spin" size={15} />Aproximando rosto...</>
+                  ) : (
+                    <><span>👤</span>Aproximar rosto</>
+                  )}
+                </button>
+
                 <button
                   onClick={handleGenerate}
-                  disabled={publishing}
+                  disabled={publishing || applyingFace}
                   className="flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
                 >
                   <RefreshCw size={15} />
