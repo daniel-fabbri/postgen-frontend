@@ -43,6 +43,7 @@ const ChannelViewPage = () => {
   const [imageGenPrompt, setImageGenPrompt] = useState('');
   const [generatingPostImage, setGeneratingPostImage] = useState(false);
   const [applyingFace, setApplyingFace] = useState(false);
+  const [deletingPost, setDeletingPost] = useState(false);
   const [uploadingPostImage, setUploadingPostImage] = useState(false);
   const [savingPost, setSavingPost] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -96,10 +97,11 @@ const ChannelViewPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [channelRes, postsRes, videosRes] = await Promise.all([
+      const [channelRes, postsRes, videosRes, refsRes] = await Promise.all([
         channelsAPI.get(id),
         postsAPI.getAll(),
         videosAPI.getAll(id),
+        referencesAPI.getAll(id),
       ]);
       setChannel(channelRes.data);
       setFormData({
@@ -115,6 +117,7 @@ const ChannelViewPage = () => {
       });
       setPosts(postsRes.data.filter(p => p.channel_id === id));
       setVideos(videosRes.data);
+      setReferences(refsRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -230,6 +233,21 @@ const ChannelViewPage = () => {
       alert(err.response?.data?.detail || 'Erro ao aplicar rosto');
     } finally {
       setApplyingFace(false);
+    }
+  };
+
+  const handleDeletePost = async () => {
+    if (!editingPost) return;
+    if (!confirm('Excluir este post permanentemente?')) return;
+    try {
+      setDeletingPost(true);
+      await postsAPI.delete(editingPost.id);
+      setPosts(prev => prev.filter(p => p.id !== editingPost.id));
+      setShowEditPostModal(false);
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Erro ao excluir post');
+    } finally {
+      setDeletingPost(false);
     }
   };
 
@@ -1120,15 +1138,22 @@ const ChannelViewPage = () => {
                   className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary-500 resize-none" />
               </div>
             </div>
-            <div className="flex justify-end space-x-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
-              <button onClick={() => setShowEditPostModal(false)} disabled={savingPost}
-                className="px-5 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                Cancelar
+            <div className="flex justify-between items-center px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
+              <button onClick={handleDeletePost} disabled={savingPost || deletingPost}
+                className="px-4 py-2 text-sm text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50 flex items-center gap-1.5">
+                {deletingPost ? <Loader className="animate-spin" size={13} /> : <Trash2 size={13} />}
+                Excluir
               </button>
-              <button onClick={handleSavePost} disabled={savingPost}
-                className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-5 py-2 text-sm rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center space-x-2">
-                {savingPost ? <><Loader className="animate-spin" size={14} /><span>Salvando...</span></> : <><Edit2 size={14} /><span>Salvar</span></>}
-              </button>
+              <div className="flex space-x-3">
+                <button onClick={() => setShowEditPostModal(false)} disabled={savingPost || deletingPost}
+                  className="px-5 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  Cancelar
+                </button>
+                <button onClick={handleSavePost} disabled={savingPost || deletingPost}
+                  className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-5 py-2 text-sm rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 flex items-center space-x-2">
+                  {savingPost ? <><Loader className="animate-spin" size={14} /><span>Salvando...</span></> : <><Edit2 size={14} /><span>Salvar</span></>}
+                </button>
+              </div>
             </div>
           </div>
         </div>

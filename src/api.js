@@ -90,6 +90,7 @@ export const postsAPI = {
     api.post(`/posts/${id}/image/generate`, { prompt, channel_id: channelId }),
   applyFace: (id, channelId) =>
     api.post(`/posts/${id}/image/face-apply`, { prompt: '', channel_id: channelId }),
+  delete: (id) => api.delete(`/posts/${id}`),
 };
 
 export const videosAPI = {
