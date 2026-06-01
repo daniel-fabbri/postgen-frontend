@@ -57,6 +57,7 @@ const ChannelViewPage = () => {
   const [aiPrompt, setAiPrompt] = useState('');
   const [generatingAvatar, setGeneratingAvatar] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [applyingFaceForAvatar, setApplyingFaceForAvatar] = useState(null); // filename sendo processado
   const [galleryCopied, setGalleryCopied] = useState(false);
   const [references, setReferences] = useState([]);
   const [uploadingRef, setUploadingRef] = useState(false);
@@ -378,6 +379,23 @@ const ChannelViewPage = () => {
     setEditPostImageUrl(postImageUrl(imagePath));
     setEditingPost(prev => ({ ...prev, image_path: imagePath }));
     setShowImagePicker(false);
+  };
+
+  const handleApplyFaceToAvatar = async (avatar) => {
+    if (!references.length) {
+      alert('Adicione fotos de referência do rosto nas configurações do canal primeiro.');
+      return;
+    }
+    try {
+      setApplyingFaceForAvatar(avatar.filename);
+      const response = await avatarsAPI.applyFace(avatar.url, id);
+      const newAvatar = { filename: response.data.filename, url: response.data.avatar_url };
+      setAvailableAvatars(prev => [newAvatar, ...prev]);
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Erro ao aproximar rosto no avatar');
+    } finally {
+      setApplyingFaceForAvatar(null);
+    }
   };
 
   const closeAvatarModal = () => {
@@ -1014,15 +1032,27 @@ const ChannelViewPage = () => {
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {availableAvatars.map((avatar) => (
-                      <button key={avatar.filename} onClick={() => selectAvatar(avatar.url)}
-                        className="group relative aspect-square rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 transition-all hover:shadow-lg">
-                        <img src={avatar.url} alt="Avatar" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                      <div key={avatar.filename} className="group relative aspect-square rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 transition-all hover:shadow-lg">
+                        <button onClick={() => selectAvatar(avatar.url)} className="w-full h-full">
+                          <img src={avatar.url} alt="Avatar" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        </button>
                         {channel.avatar_url === avatar.url && (
-                          <div className="absolute inset-0 bg-blue-600 bg-opacity-20 flex items-center justify-center">
-                            <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">Atual</div>
+                          <div className="absolute top-2 left-2 bg-blue-600 text-white px-2 py-0.5 rounded-full text-xs font-semibold pointer-events-none">
+                            Atual
                           </div>
                         )}
-                      </button>
+                        {/* Botão aproximar rosto — aparece no hover */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleApplyFaceToAvatar(avatar); }}
+                          disabled={applyingFaceForAvatar === avatar.filename}
+                          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-2 flex items-center justify-center gap-1 text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-100"
+                          title="Aproximar rosto usando fotos de referência"
+                        >
+                          {applyingFaceForAvatar === avatar.filename
+                            ? <><Loader className="animate-spin" size={12} /><span>Processando...</span></>
+                            : <><span>👤</span><span>Aproximar rosto</span></>}
+                        </button>
+                      </div>
                     ))}
                   </div>
                 )

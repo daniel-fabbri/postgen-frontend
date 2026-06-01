@@ -68,6 +68,8 @@ export const avatarsAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  applyFace: (avatarUrl, channelId) =>
+    api.post('/avatars/face-apply', { avatar_url: avatarUrl, channel_id: channelId }),
 };
 
 export const postsAPI = {
