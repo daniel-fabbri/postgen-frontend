@@ -1,7 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { channelsAPI } from '../api';
-import { Loader, Sparkles, ArrowLeft, Save, Wifi, CheckCircle, XCircle, Instagram, Unlink } from 'lucide-react';
+import { Loader, Sparkles, ArrowLeft, Save, Wifi, CheckCircle, XCircle, Instagram, Unlink, ImageIcon } from 'lucide-react';
+
+const IMAGE_MODELS = [
+  {
+    value: 'flux-kontext',
+    label: 'FLUX.1 Kontext ✦ Personagem consistente',
+    description: 'Usa as fotos de referência do canal para manter o mesmo rosto em todas as imagens. Recomendado quando há um personagem fixo.',
+    badge: 'Recomendado',
+    badgeColor: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  },
+  {
+    value: 'flux-2-pro',
+    label: 'FLUX.2 Pro — Alta qualidade',
+    description: 'Modelo de última geração para imagens realistas e detalhadas sem personagem fixo.',
+    badge: 'Azure Foundry',
+    badgeColor: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  },
+  {
+    value: 'gpt-image-2',
+    label: 'GPT-Image-2',
+    description: 'Modelo da OpenAI/Azure. Boa compreensão de texto no prompt.',
+    badge: null,
+    badgeColor: '',
+  },
+  {
+    value: 'mai',
+    label: 'MAI (padrão)',
+    description: 'Modelo padrão DALL-E via Azure OpenAI.',
+    badge: null,
+    badgeColor: '',
+  },
+];
 
 const EditChannelPage = () => {
   const navigate = useNavigate();
@@ -14,6 +45,7 @@ const EditChannelPage = () => {
     suggested_image_url: '',
     instagram_user_id: '',
     instagram_access_token: '',
+    image_model: 'mai',
     auto_reply_enabled: false,
     auto_reply_prompt: '',
   });
@@ -48,6 +80,7 @@ const EditChannelPage = () => {
         suggested_image_url: response.data.suggested_image_url || '',
         instagram_user_id: response.data.instagram_user_id || '',
         instagram_access_token: response.data.instagram_access_token || '',
+        image_model: response.data.image_model || 'mai',
         auto_reply_enabled: response.data.auto_reply_enabled || false,
         auto_reply_prompt: response.data.auto_reply_prompt || '',
       });
@@ -198,6 +231,52 @@ const EditChannelPage = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
               Instrução personalizada para a IA gerar as imagens dos posts. Se deixar vazio, usará o prompt padrão.
             </p>
+          </div>
+
+          {/* Modelo de geração de imagem */}
+          <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 mb-4">
+              <ImageIcon size={18} className="text-purple-500" />
+              <span className="font-semibold">Modelo de Geração de Imagem</span>
+            </div>
+            <div className="space-y-2">
+              {IMAGE_MODELS.map((m) => (
+                <label
+                  key={m.value}
+                  className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                    formData.image_model === m.value
+                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="image_model"
+                    value={m.value}
+                    checked={formData.image_model === m.value}
+                    onChange={(e) => setFormData({ ...formData, image_model: e.target.value })}
+                    disabled={saving}
+                    className="mt-1 accent-purple-600"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm">{m.label}</span>
+                      {m.badge && (
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${m.badgeColor}`}>
+                          {m.badge}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{m.description}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+            {formData.image_model === 'flux-kontext' && (
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
+                ✦ Com FLUX Kontext ativo, faça upload das fotos de referência do personagem na aba "Referências" do canal. O modelo usará essas imagens para manter o rosto idêntico em cada post.
+              </p>
+            )}
           </div>
 
           {/* Instagram Integration */}
