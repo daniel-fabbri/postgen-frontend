@@ -5,7 +5,6 @@ import { useAuth, AuthProvider } from './AuthContext';
 import { Moon, Sun, Sparkles, LogOut, User, DollarSign, UserCircle, Settings, Shield, ChevronDown, CreditCard, Layers } from 'lucide-react';
 import ChannelsPage from './pages/ChannelsPage';
 import CreateChannelPage from './pages/CreateChannelPage';
-import EditChannelPage from './pages/EditChannelPage';
 import ChannelViewPage from './pages/ChannelViewPage';
 import GeneratePostPage from './pages/GeneratePostPage';
 import GenerateVideoPage from './pages/GenerateVideoPage';
@@ -226,7 +225,6 @@ function AppRoutes() {
           <Route path="/channels" element={<ProtectedRoute><ChannelsPage /></ProtectedRoute>} />
           <Route path="/channels/create" element={<ProtectedRoute><CreateChannelPage /></ProtectedRoute>} />
           <Route path="/channels/:id" element={<ProtectedRoute><ChannelViewPage /></ProtectedRoute>} />
-          <Route path="/channels/:id/edit" element={<ProtectedRoute><EditChannelPage /></ProtectedRoute>} />
           <Route path="/channels/:id/generate" element={<ProtectedRoute><GeneratePostPage /></ProtectedRoute>} />
           <Route path="/channels/:id/generate-video" element={<ProtectedRoute><GenerateVideoPage /></ProtectedRoute>} />
           <Route path="/video-editor/:projectId" element={<ProtectedRoute><VideoEditorPage /></ProtectedRoute>} />
