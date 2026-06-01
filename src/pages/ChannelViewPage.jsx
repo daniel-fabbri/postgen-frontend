@@ -739,10 +739,11 @@ const ChannelViewPage = () => {
                   <label className="block text-sm font-medium mb-2">Modelo de geração de imagem</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { value: 'flux-kontext', label: 'FLUX.1 Kontext', desc: 'Mantém o rosto idêntico usando as fotos de referência. Recomendado para personagens.', badge: '✦ Recomendado', badgeClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' },
+                      { value: 'consistent-character', label: 'Consistent Character', desc: 'Rosto idêntico ao da referência em qualquer cena. Powered by Replicate.', badge: '⭐ Melhor para rostos', badgeClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' },
                       { value: 'flux-2-pro', label: 'FLUX.2 Pro', desc: 'Alta qualidade, imagens realistas e detalhadas. Sem personagem fixo.', badge: 'Azure Foundry', badgeClass: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400' },
                       { value: 'gpt-image-2', label: 'GPT-Image-2', desc: 'Modelo OpenAI/Azure. Boa leitura de prompt de texto.', badge: '2 req/min', badgeClass: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' },
                       { value: 'mai', label: 'MAI-Image-2e', desc: 'Rápido, sem limite de requests. Indicado para volume.', badge: 'Padrão', badgeClass: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' },
+                      { value: 'flux-kontext', label: 'FLUX.1 Kontext', desc: 'Image-to-image via Azure Foundry.', badge: 'Azure', badgeClass: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400' },
                     ].map(({ value, label, desc, badge, badgeClass }) => (
                       <button
                         key={value}
@@ -762,9 +763,9 @@ const ChannelViewPage = () => {
                       </button>
                     ))}
                   </div>
-                  {formData.image_model === 'flux-kontext' && (
+                  {['consistent-character', 'flux-kontext'].includes(formData.image_model) && (
                     <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
-                      ✦ Adicione fotos de referência abaixo para o rosto ser preservado em todas as imagens geradas.
+                      ⭐ Adicione fotos de referência abaixo — o modelo usará o rosto para gerar imagens consistentes.
                     </p>
                   )}
                 </div>
