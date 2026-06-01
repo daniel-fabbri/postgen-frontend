@@ -739,9 +739,11 @@ const ChannelViewPage = () => {
                   <label className="block text-sm font-medium mb-2">Modelo de geração de imagem</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { value: 'mai', label: 'MAI-Image-2e', desc: 'Rápido, sem limite de requests. Indicado para volume.', badge: 'Padrão' },
-                      { value: 'gpt-image-2', label: 'gpt-image-2', desc: 'Alta qualidade. Usa a foto de referência diretamente (image-to-image).', badge: '2 req/min' },
-                    ].map(({ value, label, desc, badge }) => (
+                      { value: 'flux-kontext', label: 'FLUX.1 Kontext', desc: 'Mantém o rosto idêntico usando as fotos de referência. Recomendado para personagens.', badge: '✦ Recomendado', badgeClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' },
+                      { value: 'flux-2-pro', label: 'FLUX.2 Pro', desc: 'Alta qualidade, imagens realistas e detalhadas. Sem personagem fixo.', badge: 'Azure Foundry', badgeClass: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400' },
+                      { value: 'gpt-image-2', label: 'GPT-Image-2', desc: 'Modelo OpenAI/Azure. Boa leitura de prompt de texto.', badge: '2 req/min', badgeClass: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' },
+                      { value: 'mai', label: 'MAI-Image-2e', desc: 'Rápido, sem limite de requests. Indicado para volume.', badge: 'Padrão', badgeClass: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' },
+                    ].map(({ value, label, desc, badge, badgeClass }) => (
                       <button
                         key={value}
                         type="button"
@@ -754,14 +756,17 @@ const ChannelViewPage = () => {
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs font-bold">{label}</span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                            value === 'mai' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400'
-                          }`}>{badge}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${badgeClass}`}>{badge}</span>
                         </div>
                         <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">{desc}</p>
                       </button>
                     ))}
                   </div>
+                  {formData.image_model === 'flux-kontext' && (
+                    <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
+                      ✦ Adicione fotos de referência abaixo para o rosto ser preservado em todas as imagens geradas.
+                    </p>
+                  )}
                 </div>
 
                 {/* References section */}
