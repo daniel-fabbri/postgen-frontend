@@ -218,7 +218,7 @@ const ChannelViewPage = () => {
   };
 
   const handleApplyFace = async () => {
-    if (!editingPost || !referenceImages.length) return;
+    if (!editingPost || !references.length) return;
     try {
       setApplyingFace(true);
       const response = await postsAPI.applyFace(editingPost.id, id);
@@ -1087,7 +1087,7 @@ const ChannelViewPage = () => {
                 <div className="aspect-square w-full bg-gray-100 dark:bg-gray-900 overflow-hidden shrink-0">
                   <img src={editPostImageUrl} alt="Post" className="w-full h-full object-cover" />
                 </div>
-                {referenceImages.length > 0 && (
+                {references.length > 0 && (
                   <button
                     onClick={handleApplyFace}
                     disabled={applyingFace || generatingPostImage}
