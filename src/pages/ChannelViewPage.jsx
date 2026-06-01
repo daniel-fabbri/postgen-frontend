@@ -42,6 +42,7 @@ const ChannelViewPage = () => {
   const [imagePickerTab, setImagePickerTab] = useState('gallery');
   const [imageGenPrompt, setImageGenPrompt] = useState('');
   const [generatingPostImage, setGeneratingPostImage] = useState(false);
+  const [applyingFace, setApplyingFace] = useState(false);
   const [uploadingPostImage, setUploadingPostImage] = useState(false);
   const [savingPost, setSavingPost] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -213,6 +214,22 @@ const ChannelViewPage = () => {
       alert('Erro ao salvar post: ' + (error.response?.data?.detail || error.message || 'erro desconhecido'));
     } finally {
       setSavingPost(false);
+    }
+  };
+
+  const handleApplyFace = async () => {
+    if (!editingPost || !referenceImages.length) return;
+    try {
+      setApplyingFace(true);
+      const response = await postsAPI.applyFace(editingPost.id, id);
+      const newPath = response.data.image_path;
+      setEditPostImageUrl(response.data.image_url);
+      setEditingPost(prev => ({ ...prev, image_path: newPath }));
+      setPostImageHistory(prev => [newPath, ...prev.filter(p => p !== newPath)]);
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Erro ao aplicar rosto');
+    } finally {
+      setApplyingFace(false);
     }
   };
 
@@ -1070,8 +1087,20 @@ const ChannelViewPage = () => {
                 <div className="aspect-square w-full bg-gray-100 dark:bg-gray-900 overflow-hidden shrink-0">
                   <img src={editPostImageUrl} alt="Post" className="w-full h-full object-cover" />
                 </div>
+                {referenceImages.length > 0 && (
+                  <button
+                    onClick={handleApplyFace}
+                    disabled={applyingFace || generatingPostImage}
+                    title="Aplica o rosto da sua foto de referência na imagem atual"
+                    className="mx-3 mt-3 px-4 py-2 text-sm bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:shadow-md transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+                  >
+                    {applyingFace
+                      ? <><Loader className="animate-spin" size={14} /><span>Aplicando rosto...</span></>
+                      : <><span>👤</span><span>Aproximar rosto</span></>}
+                  </button>
+                )}
                 <button onClick={() => setShowImagePicker(prev => !prev)}
-                  className="m-3 px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 shrink-0">
+                  className="m-3 mt-2 px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center justify-center gap-2 shrink-0">
                   <Camera size={15} /><span>{showImagePicker ? 'Fechar' : 'Trocar imagem'}</span>
                 </button>
                 {showImagePicker && (
