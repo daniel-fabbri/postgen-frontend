@@ -751,43 +751,7 @@ const ChannelViewPage = () => {
                   placeholder="Instrução para a IA gerar as imagens (opcional)" />
               </div>
 
-              {/* Image model selector */}
-              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                  <label className="block text-sm font-medium mb-2">Modelo de geração de imagem</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { value: 'consistent-character', label: 'Consistent Character', desc: 'Rosto idêntico ao da referência em qualquer cena. Powered by Replicate.', badge: '⭐ Melhor para rostos', badgeClass: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400' },
-                      { value: 'flux-2-pro', label: 'FLUX.2 Pro', desc: 'Alta qualidade, imagens realistas e detalhadas. Sem personagem fixo.', badge: 'Azure Foundry', badgeClass: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400' },
-                      { value: 'gpt-image-2', label: 'GPT-Image-2', desc: 'Modelo OpenAI/Azure. Boa leitura de prompt de texto.', badge: '2 req/min', badgeClass: 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400' },
-                      { value: 'mai', label: 'MAI-Image-2e', desc: 'Rápido, sem limite de requests. Indicado para volume.', badge: 'Padrão', badgeClass: 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' },
-                      { value: 'flux-kontext', label: 'FLUX.1 Kontext', desc: 'Image-to-image via Azure Foundry.', badge: 'Azure', badgeClass: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400' },
-                    ].map(({ value, label, desc, badge, badgeClass }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => setFormData(f => ({ ...f, image_model: value }))}
-                        className={`text-left p-3 rounded-lg border-2 transition-all ${
-                          formData.image_model === value
-                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                            : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-bold">{label}</span>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${badgeClass}`}>{badge}</span>
-                        </div>
-                        <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-snug">{desc}</p>
-                      </button>
-                    ))}
-                  </div>
-                  {['consistent-character', 'flux-kontext'].includes(formData.image_model) && (
-                    <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
-                      ⭐ Adicione fotos de referência abaixo — o modelo usará o rosto para gerar imagens consistentes.
-                    </p>
-                  )}
-                </div>
-
-                {/* References section */}
+              {/* References section */}
                 <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-2">
                     <div>
