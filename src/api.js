@@ -131,6 +131,11 @@ export const referencesAPI = {
   delete: (channelId, refId) => api.delete(`/channels/${channelId}/references/${refId}`),
 };
 
+export const loraAPI = {
+  train: (channelId) => api.post(`/channels/${channelId}/lora/train`),
+  getStatus: (channelId) => api.get(`/channels/${channelId}/lora/status`),
+};
+
 export const insightsAPI = {
   getPost: (postId) => api.get(`/posts/${postId}/insights`),
   refreshPost: (postId) => api.post(`/posts/${postId}/insights/refresh`),

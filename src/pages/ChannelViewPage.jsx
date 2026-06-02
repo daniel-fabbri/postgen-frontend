@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { channelsAPI, postsAPI, avatarsAPI, videosAPI, videoProjectsAPI, insightsAPI, referencesAPI, postImageUrl } from '../api';
+import { channelsAPI, postsAPI, avatarsAPI, videosAPI, videoProjectsAPI, insightsAPI, referencesAPI, loraAPI, postImageUrl } from '../api';
 import { useAuth } from '../AuthContext';
 import NoCreditsAlert from '../components/NoCreditsAlert';
 import CreditGate from '../components/CreditGate';
@@ -62,6 +62,9 @@ const ChannelViewPage = () => {
   const [references, setReferences] = useState([]);
   const [uploadingRef, setUploadingRef] = useState(false);
   const [describingRefId, setDescribingRefId] = useState(null);
+  const [loraStatus, setLoraStatus] = useState(null);
+  const [loraTraining, setLoraTraining] = useState(false);
+  const loraPollingRef = useRef(null);
   const [channelDropdownOpen, setChannelDropdownOpen] = useState(false);
   const channelDropdownRef = useRef(null);
   const [showConnectionsModal, setShowConnectionsModal] = useState(false);
@@ -123,6 +126,34 @@ const ChannelViewPage = () => {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const startLoraPolling = () => {
+    if (loraPollingRef.current) return;
+    loraPollingRef.current = setInterval(async () => {
+      try {
+        const res = await loraAPI.getStatus(id);
+        const st = res.data.status;
+        setLoraStatus(st);
+        if (st !== 'training' && st !== 'starting' && st !== 'processing') {
+          clearInterval(loraPollingRef.current);
+          loraPollingRef.current = null;
+        }
+      } catch {}
+    }, 30000);
+  };
+
+  const handleStartLoraTraining = async () => {
+    try {
+      setLoraTraining(true);
+      await loraAPI.train(id);
+      setLoraStatus('training');
+      startLoraPolling();
+    } catch (err) {
+      alert('Erro ao iniciar treinamento: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setLoraTraining(false);
     }
   };
 
@@ -557,6 +588,13 @@ const ChannelViewPage = () => {
                           const res = await referencesAPI.getAll(id);
                           setReferences(res.data);
                         } catch {}
+                        try {
+                          const lRes = await loraAPI.getStatus(id);
+                          setLoraStatus(lRes.data.status);
+                          if (lRes.data.status === 'training') {
+                            startLoraPolling();
+                          }
+                        } catch {}
                       }}
                       className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     >
@@ -867,6 +905,48 @@ const ChannelViewPage = () => {
                     </div>
                   )}
                 </div>
+
+              {/* LoRA Training */}
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                <div className="mb-2">
+                  <p className="text-sm font-semibold">Treinar personagem (LoRA)</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Treina um modelo com suas fotos para gerar imagens com sua identidade real — sem montagem. Requer mínimo 5 fotos. Demora ~20 minutos.
+                  </p>
+                </div>
+
+                {loraStatus === 'succeeded' && (
+                  <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-medium">
+                    <CheckCircle size={14} />
+                    <span>Modelo treinado e ativo! "Aproximar rosto" agora usa seu LoRA pessoal.</span>
+                  </div>
+                )}
+                {(loraStatus === 'training' || loraStatus === 'starting' || loraStatus === 'processing') && (
+                  <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs font-medium">
+                    <Loader className="animate-spin" size={14} />
+                    <span>Treinando... isso pode demorar ~20 minutos. Pode fechar este modal.</span>
+                  </div>
+                )}
+                {loraStatus === 'failed' && (
+                  <div className="mb-2 flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-xs font-medium">
+                    <XCircle size={14} />
+                    <span>Treinamento falhou. Verifique se tem pelo menos 5 fotos e tente novamente.</span>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleStartLoraTraining}
+                  disabled={loraTraining || loraStatus === 'training' || loraStatus === 'starting' || loraStatus === 'processing' || references.length < 5}
+                  className="w-full py-2.5 px-4 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-700 text-sm font-medium hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loraTraining
+                    ? <><Loader className="animate-spin" size={14} /><span>Iniciando...</span></>
+                    : loraStatus === 'succeeded'
+                    ? <><RefreshCw size={14} /><span>Retreinar modelo</span></>
+                    : <><Sparkles size={14} /><span>Treinar meu personagem {references.length < 5 ? `(${references.length}/5 fotos)` : ''}</span></>
+                  }
+                </button>
+              </div>
               </div>
             <div className="flex justify-end space-x-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">
               <button onClick={() => setShowEditModal(false)} disabled={saving}
