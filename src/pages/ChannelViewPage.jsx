@@ -1032,24 +1032,27 @@ const ChannelViewPage = () => {
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {availableAvatars.map((avatar) => (
-                      <div key={avatar.filename} className="group relative aspect-square rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 hover:border-blue-500 transition-all hover:shadow-lg">
-                        <button onClick={() => selectAvatar(avatar.url)} className="w-full h-full">
-                          <img src={avatar.url} alt="Avatar" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                        </button>
-                        {channel.avatar_url === avatar.url && (
-                          <div className="absolute top-2 left-2 bg-blue-600 text-white px-2 py-0.5 rounded-full text-xs font-semibold pointer-events-none">
-                            Atual
-                          </div>
-                        )}
-                        {/* Botão aproximar rosto — aparece no hover */}
+                      <div key={avatar.filename} className="flex flex-col gap-1.5">
+                        {/* Imagem clicável para selecionar */}
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleApplyFaceToAvatar(avatar); }}
+                          onClick={() => selectAvatar(avatar.url)}
+                          className="relative aspect-square rounded-xl overflow-hidden border-2 transition-all hover:shadow-lg hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 ${channel.avatar_url === avatar.url ? 'border-blue-500' : 'border-gray-200 dark:border-gray-700'}"
+                        >
+                          <img src={avatar.url} alt="Avatar" className="w-full h-full object-cover" />
+                          {channel.avatar_url === avatar.url && (
+                            <div className="absolute top-2 left-2 bg-blue-600 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
+                              Atual
+                            </div>
+                          )}
+                        </button>
+                        {/* Botão Aproximar rosto — sempre visível */}
+                        <button
+                          onClick={() => handleApplyFaceToAvatar(avatar)}
                           disabled={applyingFaceForAvatar === avatar.filename}
-                          className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-2 flex items-center justify-center gap-1 text-white text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-100"
-                          title="Aproximar rosto usando fotos de referência"
+                          className="w-full py-1.5 px-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-medium hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-1"
                         >
                           {applyingFaceForAvatar === avatar.filename
-                            ? <><Loader className="animate-spin" size={12} /><span>Processando...</span></>
+                            ? <><Loader className="animate-spin" size={11} /><span>Processando...</span></>
                             : <><span>👤</span><span>Aproximar rosto</span></>}
                         </button>
                       </div>
