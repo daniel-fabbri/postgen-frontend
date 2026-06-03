@@ -104,6 +104,11 @@ export const videosAPI = {
       seconds,
       size,
     }),
+  generateWithCharacter: (channelId, additionalPrompt) =>
+    api.post('/videos/generate-with-character', {
+      channel_id: channelId,
+      additional_prompt: additionalPrompt || null,
+    }),
   updateCaption: (id, caption) => api.patch(`/videos/${id}/caption`, { caption }),
   publish: (id) => api.post(`/videos/${id}/publish`),
   delete: (id) => api.delete(`/videos/${id}`),

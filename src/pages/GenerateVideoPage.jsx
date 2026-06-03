@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { channelsAPI, videosAPI } from '../api';
 import {
   Loader, Sparkles, ArrowLeft, RefreshCw, Video, Download,
-  Clock, Maximize2, Share2, CheckCircle, Copy,
+  Clock, Maximize2, Share2, CheckCircle, Copy, User,
 } from 'lucide-react';
 import { useAuth } from '../AuthContext';
 import CreditGate from '../components/CreditGate';
@@ -20,6 +20,8 @@ const SIZES = [
   { value: '1080x1080', label: '1:1', desc: 'Feed quadrado' },
 ];
 
+const CHARACTER_VIDEO_COST = 350;
+
 const GenerateVideoPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -32,9 +34,12 @@ const GenerateVideoPage = () => {
   const [additionalPrompt, setAdditionalPrompt] = useState('');
   const [seconds, setSeconds] = useState(4);
   const [size, setSize] = useState('720x1280');
+  const [mode, setMode] = useState('sora'); // 'sora' | 'character'
   const costForVideo = seconds * 50;
   const hasCredits = isAdmin || balance >= costForVideo;
+  const hasCreditsForCharacter = isAdmin || balance >= CHARACTER_VIDEO_COST;
   const [elapsed, setElapsed] = useState(0);
+  const [loadingStep, setLoadingStep] = useState('');
   const [caption, setCaption] = useState('');
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
@@ -45,9 +50,13 @@ const GenerateVideoPage = () => {
 
   useEffect(() => {
     if (!loading) { setElapsed(0); return; }
-    const t = setInterval(() => setElapsed(e => e + 1), 1000);
+    const t = setInterval(() => setElapsed(e => {
+      // Após ~45s no modo personagem, avança visualmente para o step de animação
+      if (loadingStep === 'frame' && e === 44) setLoadingStep('animate');
+      return e + 1;
+    }), 1000);
     return () => clearInterval(t);
-  }, [loading]);
+  }, [loading, loadingStep]);
 
   const loadChannel = async () => {
     try {
@@ -63,6 +72,7 @@ const GenerateVideoPage = () => {
 
   const handleGenerate = async () => {
     setLoading(true);
+    setLoadingStep('sora');
     setVideo(null);
     setCaption('');
     setPublished(false);
@@ -75,6 +85,26 @@ const GenerateVideoPage = () => {
       alert('Erro ao gerar vídeo: ' + (err.response?.data?.detail || err.message));
     } finally {
       setLoading(false);
+      setLoadingStep('');
+    }
+  };
+
+  const handleGenerateWithCharacter = async () => {
+    setLoading(true);
+    setLoadingStep('frame');
+    setVideo(null);
+    setCaption('');
+    setPublished(false);
+    try {
+      const res = await videosAPI.generateWithCharacter(id, additionalPrompt);
+      setVideo(res.data);
+      setCaption(res.data.caption || '');
+      await refreshUser();
+    } catch (err) {
+      alert('Erro ao gerar vídeo com personagem: ' + (err.response?.data?.detail || err.message));
+    } finally {
+      setLoading(false);
+      setLoadingStep('');
     }
   };
 
@@ -157,7 +187,7 @@ const GenerateVideoPage = () => {
             <div>
               <h1 className="text-xl font-bold">{channel.name}</h1>
               <p className="text-violet-200 text-sm mt-0.5 flex items-center gap-1.5">
-                <Sparkles size={13} /> Gerador de vídeo com Sora
+                <Sparkles size={13} /> Gerador de vídeo com IA
               </p>
             </div>
           </div>
@@ -171,76 +201,147 @@ const GenerateVideoPage = () => {
             </button>
           )}
         </div>
+
+        {/* Mode selector — só aparece se o canal tem LoRA treinado */}
+        {channel.lora_status === 'succeeded' && !video && !loading && (
+          <div className="mt-4 flex gap-2 bg-white/10 rounded-xl p-1">
+            <button
+              onClick={() => setMode('sora')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                mode === 'sora'
+                  ? 'bg-white text-violet-700 shadow'
+                  : 'text-white/80 hover:bg-white/10'
+              }`}
+            >
+              <Sparkles size={14} />
+              Sora
+            </button>
+            <button
+              onClick={() => setMode('character')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                mode === 'character'
+                  ? 'bg-white text-violet-700 shadow'
+                  : 'text-white/80 hover:bg-white/10'
+              }`}
+            >
+              <User size={14} />
+              Com personagem
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Config panel — hidden once video is ready */}
       {!loading && !video && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 space-y-5">
-          {/* Duration */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
-              <Clock size={14} /> Duração
-            </label>
-            <div className="flex gap-2">
-              {DURATIONS.map(d => (
-                <button key={d.value} type="button" onClick={() => setSeconds(d.value)}
-                  className={`flex-1 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all ${
-                    seconds === d.value
-                      ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
-                      : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
-                  }`}
+
+          {mode === 'character' ? (
+            /* ── Modo personagem ── */
+            <>
+              <div className="flex items-start gap-3 p-4 bg-violet-50 dark:bg-violet-900/20 rounded-xl border border-violet-200 dark:border-violet-800">
+                <User size={18} className="text-violet-600 dark:text-violet-400 mt-0.5 shrink-0" />
+                <div className="text-sm text-violet-800 dark:text-violet-300">
+                  <p className="font-semibold mb-0.5">Vídeo com seu personagem</p>
+                  <p className="text-violet-600 dark:text-violet-400 leading-relaxed">
+                    Gera um frame portrait do seu personagem via LoRA e anima com MiniMax Video-01.
+                    Resultado: ~6s em 9:16, consistência facial garantida.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Contexto adicional <span className="font-normal text-gray-400">(opcional)</span>
+                </label>
+                <textarea
+                  value={additionalPrompt}
+                  onChange={e => setAdditionalPrompt(e.target.value)}
+                  placeholder="Ex: Personagem sorrindo com produto na mão, luz natural, fundo neutro..."
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-sm"
+                  rows={3}
+                />
+              </div>
+
+              <CreditGate blocked={!hasCreditsForCharacter} needed={CHARACTER_VIDEO_COST} className="w-full">
+                <button
+                  onClick={handleGenerateWithCharacter}
+                  className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all flex items-center justify-center gap-2"
                 >
-                  <div className="font-bold">{d.label}</div>
-                  <div className="text-xs opacity-70">{d.desc}</div>
+                  <User size={18} />
+                  Gerar vídeo com personagem
                 </button>
-              ))}
-            </div>
-          </div>
+              </CreditGate>
+            </>
+          ) : (
+            /* ── Modo Sora ── */
+            <>
+              {/* Duration */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
+                  <Clock size={14} /> Duração
+                </label>
+                <div className="flex gap-2">
+                  {DURATIONS.map(d => (
+                    <button key={d.value} type="button" onClick={() => setSeconds(d.value)}
+                      className={`flex-1 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all ${
+                        seconds === d.value
+                          ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                          : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="font-bold">{d.label}</div>
+                      <div className="text-xs opacity-70">{d.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          {/* Size */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
-              <Maximize2 size={14} /> Formato
-            </label>
-            <div className="flex gap-2">
-              {SIZES.map(s => (
-                <button key={s.value} type="button" onClick={() => setSize(s.value)}
-                  className={`flex-1 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all ${
-                    size === s.value
-                      ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
-                      : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
-                  }`}
+              {/* Size */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
+                  <Maximize2 size={14} /> Formato
+                </label>
+                <div className="flex gap-2">
+                  {SIZES.map(s => (
+                    <button key={s.value} type="button" onClick={() => setSize(s.value)}
+                      className={`flex-1 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all ${
+                        size === s.value
+                          ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                          : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="font-bold">{s.label}</div>
+                      <div className="text-xs opacity-70">{s.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Prompt */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Contexto adicional <span className="font-normal text-gray-400">(opcional)</span>
+                </label>
+                <textarea
+                  value={additionalPrompt}
+                  onChange={e => setAdditionalPrompt(e.target.value)}
+                  placeholder="Ex: Mostrar o produto em close, ambiente minimalista, tons quentes..."
+                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-sm"
+                  rows={3}
+                />
+              </div>
+
+              <CreditGate blocked={!hasCredits} needed={costForVideo} className="w-full">
+                <button
+                  onClick={handleGenerate}
+                  className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all flex items-center justify-center gap-2"
                 >
-                  <div className="font-bold">{s.label}</div>
-                  <div className="text-xs opacity-70">{s.desc}</div>
+                  <Video size={18} />
+                  Gerar vídeo com Sora
                 </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Prompt */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              Contexto adicional <span className="font-normal text-gray-400">(opcional)</span>
-            </label>
-            <textarea
-              value={additionalPrompt}
-              onChange={e => setAdditionalPrompt(e.target.value)}
-              placeholder="Ex: Mostrar o produto em close, ambiente minimalista, tons quentes..."
-              className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-sm"
-              rows={3}
-            />
-          </div>
-
-          <CreditGate blocked={!hasCredits} needed={costForVideo} className="w-full">
-            <button
-              onClick={handleGenerate}
-              className="w-full bg-gradient-to-r from-violet-600 to-purple-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:shadow-lg hover:shadow-violet-200 dark:hover:shadow-violet-900/30 transition-all flex items-center justify-center gap-2"
-            >
-              <Video size={18} />
-              Gerar vídeo com Sora
-            </button>
-          </CreditGate>
+              </CreditGate>
+            </>
+          )}
         </div>
       )}
 
@@ -248,13 +349,56 @@ const GenerateVideoPage = () => {
       {loading && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-16 text-center">
           <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/40 dark:to-purple-900/40 mb-6 relative">
-            <Video size={36} className="text-violet-600" />
+            {loadingStep === 'frame' ? <User size={36} className="text-violet-600" /> : <Video size={36} className="text-violet-600" />}
             <div className="absolute inset-0 rounded-full border-4 border-violet-200 dark:border-violet-800 border-t-violet-600 animate-spin" />
           </div>
-          <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Sora está criando seu vídeo...</h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto mb-4">
-            A geração de vídeo com IA leva entre 30 segundos e 2 minutos. Aguarde.
-          </p>
+
+          {loadingStep === 'frame' ? (
+            <>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Gerando frame do personagem...</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto mb-4">
+                Aplicando seu LoRA para criar o frame de referência em portrait.
+              </p>
+              {/* Steps indicator */}
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 dark:text-violet-400">
+                  <div className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px]">1</div>
+                  Frame LoRA
+                </div>
+                <div className="h-px w-8 bg-gray-300 dark:bg-gray-600" />
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-400">
+                  <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 flex items-center justify-center text-[10px]">2</div>
+                  Animar vídeo
+                </div>
+              </div>
+            </>
+          ) : loadingStep === 'animate' ? (
+            <>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Animando com MiniMax...</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto mb-4">
+                Transformando o frame do personagem em vídeo. Pode levar até 5 minutos.
+              </p>
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center">✓</div>
+                  Frame LoRA
+                </div>
+                <div className="h-px w-8 bg-violet-400" />
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 dark:text-violet-400">
+                  <div className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px]">2</div>
+                  Animar vídeo
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Sora está criando seu vídeo...</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto mb-4">
+                A geração de vídeo com IA leva entre 30 segundos e 2 minutos. Aguarde.
+              </p>
+            </>
+          )}
+
           <div className="inline-flex items-center gap-2 bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 text-sm font-medium px-4 py-2 rounded-full">
             <Clock size={14} />
             {elapsed}s
@@ -305,7 +449,9 @@ const GenerateVideoPage = () => {
                 )}
                 <div>
                   <p className="text-sm font-semibold text-gray-800 dark:text-white">{channel.name}</p>
-                  <p className="text-xs text-gray-400">Sora · {video.duration_seconds}s · {video.size}</p>
+                  <p className="text-xs text-gray-400">
+                    {mode === 'character' ? 'LoRA + MiniMax' : 'Sora'} · {video.duration_seconds}s · {video.size}
+                  </p>
                 </div>
               </div>
 
@@ -376,7 +522,7 @@ const GenerateVideoPage = () => {
                     Baixar
                   </button>
                   <button
-                    onClick={handleGenerate}
+                    onClick={mode === 'character' ? handleGenerateWithCharacter : handleGenerate}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                   >
                     <RefreshCw size={15} />
