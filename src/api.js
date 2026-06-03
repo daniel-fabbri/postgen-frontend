@@ -55,6 +55,14 @@ export const channelsAPI = {
   testInstagram: (id, data) => api.post(`/channels/${id}/test-instagram`, data),
   getInstagramOAuthUrl: (channelId) => api.get('/auth/instagram/authorize', { params: { channel_id: channelId } }),
   disconnectInstagram: (id) => api.delete(`/channels/${id}/instagram`),
+  createVoiceClone: (channelId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/channels/${channelId}/voice-clone`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  deleteVoiceClone: (channelId) => api.delete(`/channels/${channelId}/voice-clone`),
 };
 
 export const avatarsAPI = {
@@ -104,10 +112,12 @@ export const videosAPI = {
       seconds,
       size,
     }),
-  generateWithCharacter: (channelId, additionalPrompt) =>
+  generateWithCharacter: (channelId, additionalPrompt, size, voiceScript) =>
     api.post('/videos/generate-with-character', {
       channel_id: channelId,
       additional_prompt: additionalPrompt || null,
+      size: size || '1024x1792',
+      voice_script: voiceScript || null,
     }),
   getCharacterJob: (jobId) => api.get(`/videos/character-job/${jobId}`),
   updateCaption: (id, caption) => api.patch(`/videos/${id}/caption`, { caption }),

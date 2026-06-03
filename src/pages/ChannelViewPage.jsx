@@ -65,6 +65,9 @@ const ChannelViewPage = () => {
   const [loraStatus, setLoraStatus] = useState(null);
   const [loraTraining, setLoraTraining] = useState(false);
   const loraPollingRef = useRef(null);
+  const [showRefInfo, setShowRefInfo] = useState(false);
+  const [uploadingVoice, setUploadingVoice] = useState(false);
+  const [deletingVoice, setDeletingVoice] = useState(false);
   const [channelDropdownOpen, setChannelDropdownOpen] = useState(false);
   const channelDropdownRef = useRef(null);
   const [showConnectionsModal, setShowConnectionsModal] = useState(false);
@@ -829,7 +832,17 @@ const ChannelViewPage = () => {
                 <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="text-sm font-semibold">Referências visuais</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-semibold">Referências visuais</p>
+                        <button
+                          type="button"
+                          onClick={() => setShowRefInfo(v => !v)}
+                          className="text-gray-400 hover:text-violet-500 transition-colors"
+                          title="Dicas para fotos de referência"
+                        >
+                          <Info size={14} />
+                        </button>
+                      </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                         Fotos de referência do personagem/pessoa — a IA usa como base para gerar imagens consistentes.
                       </p>
@@ -870,6 +883,19 @@ const ChannelViewPage = () => {
                         }} />
                     </label>
                   </div>
+                  {/* Painel de dicas */}
+                  {showRefInfo && (
+                    <div className="mb-3 p-3 bg-violet-50 dark:bg-violet-900/20 rounded-xl border border-violet-200 dark:border-violet-800 text-xs text-violet-800 dark:text-violet-300 space-y-1.5">
+                      <p className="font-semibold text-violet-700 dark:text-violet-200 mb-1">Como montar uma boa base de fotos</p>
+                      <p><span className="font-semibold">Quantidade:</span> Mínimo 5, ideal entre 10 e 20 fotos. Mais fotos = personagem mais consistente no LoRA.</p>
+                      <p><span className="font-semibold">Qualidade:</span> Alta resolução (≥ 512 px), boa iluminação, foco nítido no rosto.</p>
+                      <p><span className="font-semibold">Ângulos e poses:</span> Varie entre frente, 3/4 e perfil. Misture expressões (neutro, sorriso, sério).</p>
+                      <p><span className="font-semibold">Iluminação:</span> Use fotos em diferentes condições — luz natural, artificial, interior e exterior.</p>
+                      <p><span className="font-semibold">Cenários:</span> Fundos variados (branco, colorido, externo) melhoram a generalização do modelo.</p>
+                      <p><span className="font-semibold">Evite:</span> Fotos de grupo, filtros de beleza fortes, óculos escuros, chapéu cobrindo o rosto, imagens borradas ou muito escuras.</p>
+                    </div>
+                  )}
+
                   {references.length === 0 ? (
                     <p className="text-xs text-gray-400 italic py-2">Nenhuma referência adicionada ainda.</p>
                   ) : (
@@ -946,6 +972,70 @@ const ChannelViewPage = () => {
                     : <><Sparkles size={14} /><span>Treinar meu personagem {references.length < 5 ? `(${references.length}/5 fotos)` : ''}</span></>
                   }
                 </button>
+              </div>
+
+              {/* Voz clonada (ElevenLabs) */}
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                <div className="mb-2">
+                  <p className="text-sm font-semibold">Voz clonada</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Envie uma amostra de áudio da sua voz (MP3/WAV, mínimo 30 s). O ElevenLabs cria um clone e o usa na narração dos vídeos.
+                  </p>
+                </div>
+
+                {channel?.elevenlabs_voice_id ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-medium">
+                      <CheckCircle size={14} />
+                      <span>Voz clonada ativa! ID: <span className="font-mono">{channel.elevenlabs_voice_id.slice(0, 16)}…</span></span>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        try {
+                          setDeletingVoice(true);
+                          const res = await channelsAPI.deleteVoiceClone(id);
+                          setChannel(prev => ({ ...prev, elevenlabs_voice_id: null }));
+                          setFormData(prev => ({ ...prev, elevenlabs_voice_id: null }));
+                        } catch (err) {
+                          alert('Erro ao remover voz: ' + (err.response?.data?.detail || err.message));
+                        } finally {
+                          setDeletingVoice(false);
+                        }
+                      }}
+                      disabled={deletingVoice}
+                      className="w-full py-2 px-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {deletingVoice ? <><Loader className="animate-spin" size={12} /><span>Removendo...</span></> : <><Trash2 size={12} /><span>Remover voz clonada</span></>}
+                    </button>
+                  </div>
+                ) : (
+                  <label className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-dashed text-sm font-medium transition-colors cursor-pointer ${
+                    uploadingVoice
+                      ? 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/30 text-gray-400'
+                      : 'border-violet-300 dark:border-violet-700 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/30'
+                  }`}>
+                    {uploadingVoice
+                      ? <><Loader className="animate-spin" size={14} /><span>Criando clone...</span></>
+                      : <><Upload size={14} /><span>Enviar amostra de voz (MP3/WAV)</span></>
+                    }
+                    <input type="file" className="hidden" accept="audio/*" disabled={uploadingVoice}
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        try {
+                          setUploadingVoice(true);
+                          const res = await channelsAPI.createVoiceClone(id, file);
+                          setChannel(prev => ({ ...prev, elevenlabs_voice_id: res.data.elevenlabs_voice_id }));
+                          setFormData(prev => ({ ...prev, elevenlabs_voice_id: res.data.elevenlabs_voice_id }));
+                        } catch (err) {
+                          alert('Erro ao criar clone de voz: ' + (err.response?.data?.detail || err.message));
+                        } finally {
+                          setUploadingVoice(false);
+                          e.target.value = '';
+                        }
+                      }} />
+                  </label>
+                )}
               </div>
               </div>
             <div className="flex justify-end space-x-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 shrink-0">

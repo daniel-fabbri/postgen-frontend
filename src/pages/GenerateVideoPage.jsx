@@ -20,6 +20,12 @@ const SIZES = [
   { value: '1080x1080', label: '1:1', desc: 'Feed quadrado' },
 ];
 
+const CHAR_SIZES = [
+  { value: '1024x1792', label: '9:16', desc: 'Reels / Stories' },
+  { value: '1024x1024', label: '1:1', desc: 'Feed quadrado' },
+  { value: '1792x1024', label: '16:9', desc: 'YouTube' },
+];
+
 const CHARACTER_VIDEO_COST = 350;
 
 function Step({ n, label, active, done }) {
@@ -54,6 +60,8 @@ const GenerateVideoPage = () => {
   const [seconds, setSeconds] = useState(4);
   const [size, setSize] = useState('720x1280');
   const [mode, setMode] = useState('sora'); // 'sora' | 'character'
+  const [charSize, setCharSize] = useState('1024x1792');
+  const [voiceScript, setVoiceScript] = useState('');
   const costForVideo = seconds * 50;
   const hasCredits = isAdmin || balance >= costForVideo;
   const hasCreditsForCharacter = isAdmin || balance >= CHARACTER_VIDEO_COST;
@@ -141,7 +149,7 @@ const GenerateVideoPage = () => {
     };
 
     try {
-      const res = await videosAPI.generateWithCharacter(id, additionalPrompt);
+      const res = await videosAPI.generateWithCharacter(id, additionalPrompt, charSize, voiceScript);
       const { job_id } = res.data;
       setTimeout(() => pollJob(job_id), 8000); // primeiro poll após 8s
     } catch (err) {
@@ -292,6 +300,27 @@ const GenerateVideoPage = () => {
                 </div>
               </div>
 
+              {/* Formato da imagem */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1.5">
+                  <Maximize2 size={14} /> Formato
+                </label>
+                <div className="flex gap-2">
+                  {CHAR_SIZES.map(s => (
+                    <button key={s.value} type="button" onClick={() => setCharSize(s.value)}
+                      className={`flex-1 py-2.5 px-3 rounded-xl border text-sm font-medium transition-all ${
+                        charSize === s.value
+                          ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300'
+                          : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="font-bold">{s.label}</div>
+                      <div className="text-xs opacity-70">{s.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                   Contexto adicional <span className="font-normal text-gray-400">(opcional)</span>
@@ -304,6 +333,25 @@ const GenerateVideoPage = () => {
                   rows={3}
                 />
               </div>
+
+              {/* Roteiro de voz — só aparece se canal tem voz clonada */}
+              {channel.elevenlabs_voice_id && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1.5">
+                    <span>🎙️</span> Roteiro de voz <span className="font-normal text-gray-400">(opcional)</span>
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                    Texto que será narrado com sua voz clonada no vídeo.
+                  </p>
+                  <textarea
+                    value={voiceScript}
+                    onChange={e => setVoiceScript(e.target.value)}
+                    placeholder="Ex: Oi pessoal! Hoje vou mostrar algo incrível que vai mudar a forma como vocês..."
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent dark:bg-gray-700 dark:text-white resize-none text-sm"
+                    rows={3}
+                  />
+                </div>
+              )}
 
               <CreditGate blocked={!hasCreditsForCharacter} needed={CHARACTER_VIDEO_COST} className="w-full">
                 <button
