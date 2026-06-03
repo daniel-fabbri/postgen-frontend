@@ -529,7 +529,7 @@ const ChannelViewPage = () => {
       {/* Channel Info Card */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 relative overflow-visible">
         <div className="relative h-48 bg-gradient-to-r from-purple-600 to-blue-600 rounded-t-xl">
-          <div className="absolute -bottom-16 left-8 group z-30">
+          <div className="absolute -bottom-16 left-4 sm:left-8 group z-30">
             <div className="relative">
               {channel.avatar_url ? (
                 <img src={channel.avatar_url} alt={channel.name}
@@ -547,24 +547,24 @@ const ChannelViewPage = () => {
             </div>
           </div>
         </div>
-        <div className="pt-20 pb-6 px-8">
-          <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold">{channel.name}</h1>
-            <div className="flex items-center space-x-3">
+        <div className="pt-20 pb-6 px-4 sm:px-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold">{channel.name}</h1>
+            <div className="flex items-center gap-2">
               <CreditGate blocked={!canVideo} needed={200}>
                 <button
                   onClick={() => navigate(`/channels/${id}/generate-video`)}
-                  className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2">
+                  className="bg-gradient-to-r from-violet-600 to-purple-600 text-white px-3 sm:px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2">
                   <Video size={16} />
-                  <span>Gerar Vídeo</span>
+                  <span className="hidden sm:inline">Gerar Vídeo</span>
                 </button>
               </CreditGate>
               <CreditGate blocked={!canPost} needed={32}>
                 <button
                   onClick={() => navigate(`/channels/${id}/generate`)}
-                  className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2">
+                  className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-3 sm:px-4 py-2.5 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2">
                   <Sparkles size={16} />
-                  <span>Gerar Post</span>
+                  <span className="hidden sm:inline">Gerar Post</span>
                 </button>
               </CreditGate>
               
@@ -1179,7 +1179,7 @@ const ChannelViewPage = () => {
             </div>
             <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
               <div className="md:w-72 shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 overflow-y-auto">
-                <div className="aspect-square w-full bg-gray-100 dark:bg-gray-900 overflow-hidden shrink-0">
+                <div className="w-full h-48 sm:h-64 md:aspect-square md:h-auto bg-gray-100 dark:bg-gray-900 overflow-hidden shrink-0">
                   <img src={editPostImageUrl} alt="Post" className="w-full h-full object-cover" />
                 </div>
                 {references.length > 0 && (
@@ -1293,20 +1293,20 @@ const ChannelViewPage = () => {
             </button>
           )}
 
-          <div className="max-w-6xl w-full mx-4 flex flex-col md:flex-row gap-6 items-center">
+          <div className="max-w-6xl w-full mx-4 flex flex-col md:flex-row gap-4 md:gap-6 items-center">
             {/* Media */}
             <div className="flex-1 flex items-center justify-center">
               {currentItem._type === 'post' ? (
                 <img src={postImageUrl(currentItem.image_path)} alt="Post"
-                  className="max-h-[85vh] max-w-full object-contain rounded-lg shadow-2xl" />
+                  className="max-h-[40vh] md:max-h-[82vh] max-w-full object-contain rounded-lg shadow-2xl" />
               ) : (
                 <video src={currentItem.video_path} controls autoPlay loop playsInline
-                  className="max-h-[85vh] max-w-full object-contain rounded-lg shadow-2xl" />
+                  className="max-h-[40vh] md:max-h-[82vh] max-w-full object-contain rounded-lg shadow-2xl" />
               )}
             </div>
 
             {/* Sidebar */}
-            <div className="w-full md:w-96 bg-white dark:bg-gray-800 rounded-lg shadow-2xl flex flex-col" style={{ maxHeight: '85vh' }}>
+            <div className="w-full md:w-96 bg-white dark:bg-gray-800 rounded-lg shadow-2xl flex flex-col max-h-[48vh] md:max-h-[82vh]">
               {/* Header */}
               <div className="shrink-0 p-4 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex items-center gap-3">

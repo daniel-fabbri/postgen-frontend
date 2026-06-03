@@ -36,17 +36,18 @@ const ChannelsPage = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Channels</h1>
+          <h1 className="text-3xl font-bold">Canais</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Manage your social media channels
+            Gerencie seus canais de redes sociais
           </p>
         </div>
         <button
           onClick={() => navigate('/channels/create')}
-          className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2"
+          className="bg-gradient-to-r from-primary-500 to-purple-600 text-white px-4 sm:px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all flex items-center space-x-2"
         >
           <Plus size={20} />
-          <span>Create Channel</span>
+          <span className="hidden sm:inline">Criar Canal</span>
+          <span className="sm:hidden">Criar</span>
         </button>
       </div>
 
@@ -57,15 +58,15 @@ const ChannelsPage = () => {
               <Sparkles size={48} className="text-gray-400" />
             </div>
           </div>
-          <h3 className="text-xl font-semibold mb-2">No channels yet</h3>
+          <h3 className="text-xl font-semibold mb-2">Nenhum canal ainda</h3>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Create your first channel to start generating content
+            Crie seu primeiro canal para começar a gerar conteúdo
           </p>
           <button
             onClick={() => navigate('/channels/create')}
             className="bg-primary-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-primary-600 transition-colors"
           >
-            Create Channel
+            Criar Canal
           </button>
         </div>
       ) : (

@@ -163,7 +163,7 @@ export default function LandingPage() {
         <div className="absolute bottom-0 left-1/2 w-72 h-72 bg-pink-400 dark:bg-pink-600 rounded-full blur-3xl opacity-10" />
 
         <div className="relative max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             {/* Left */}
             <div className="space-y-8">
               <div className="flex flex-wrap gap-2">
@@ -177,7 +177,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <h1 className="text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
                 Crie posts para o{' '}
                 <span className="bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 bg-clip-text text-transparent">
                   Instagram
@@ -230,7 +230,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16 space-y-4">
             <p className="text-sm font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-widest">Funcionalidades</p>
-            <h2 className="text-4xl font-bold">Tudo que você precisa para criar conteúdo de forma inteligente</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold">Tudo que você precisa para criar conteúdo de forma inteligente</h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
               Do prompt à publicação, sem abrir outras ferramentas.
             </p>
@@ -260,7 +260,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16 space-y-4">
             <p className="text-sm font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-widest">Como funciona</p>
-            <h2 className="text-4xl font-bold">Três passos. Um post perfeito.</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold">Três passos. Um post perfeito.</h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 relative">
@@ -289,7 +289,7 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-6">
               <p className="text-sm font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-widest">Por que PostGen</p>
-              <h2 className="text-4xl font-bold leading-tight">
+              <h2 className="text-3xl sm:text-4xl font-bold leading-tight">
                 Feito para quem produz conteúdo, não para quem programa
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -334,7 +334,7 @@ export default function LandingPage() {
           <div className="inline-flex p-4 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl shadow-xl shadow-purple-500/25 mb-2">
             <Sparkles className="w-8 h-8 text-white" />
           </div>
-          <h2 className="text-4xl lg:text-5xl font-extrabold leading-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight">
             Pronto para transformar sua presença no Instagram?
           </h2>
           <p className="text-xl text-gray-600 dark:text-gray-400">
