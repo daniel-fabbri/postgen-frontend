@@ -78,9 +78,9 @@ const GenerateVideoPage = () => {
   useEffect(() => {
     if (!loading) { setElapsed(0); return; }
     const t = setInterval(() => setElapsed(e => {
-      if (loadingStep === 'scene'     && e === 14)  setLoadingStep('character'); // GPT-Image-2 ~15s
-      if (loadingStep === 'character' && e === 59)  setLoadingStep('animate');  // LoRA img2img ~45s
-      if (loadingStep === 'animate'   && e === 299 && voiceScript) setLoadingStep('audio'); // MiniMax ~4min
+      if (loadingStep === 'scene'     && e === 14)  setLoadingStep('character');
+      if (loadingStep === 'character' && e === 59)  setLoadingStep(voiceScript ? 'audio' : 'animate');
+      if (loadingStep === 'audio'     && e === 74)  setLoadingStep('animate'); // TTS ~15s → SadTalker
       return e + 1;
     }), 1000);
     return () => clearInterval(t);
@@ -460,7 +460,7 @@ const GenerateVideoPage = () => {
               <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto">O modelo treinado com suas fotos substitui o rosto na cena. ~45s</p>
             </>
           )}
-          {loadingStep === 'animate' && (
+          {loadingStep === 'animate' && !voiceScript && (
             <>
               <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1">Animando com MiniMax Video-01</h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto">Transformando o frame em vídeo com movimento natural. Pode levar até 5 min.</p>
@@ -468,8 +468,14 @@ const GenerateVideoPage = () => {
           )}
           {loadingStep === 'audio' && (
             <>
-              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1">Sincronizando voz com LatentSync</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto">Gerando narração com sua voz clonada e sincronizando os lábios. ~2 min.</p>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1">Gerando narração com sua voz</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto">ElevenLabs sintetizando o áudio com sua voz clonada. ~15s</p>
+            </>
+          )}
+          {loadingStep === 'animate' && voiceScript && (
+            <>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1">Animando rosto com SadTalker</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto">Gerando o vídeo com lip sync direto da imagem. ~3 min.</p>
             </>
           )}
           {loadingStep === 'sora' && (
