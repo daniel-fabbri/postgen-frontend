@@ -78,13 +78,13 @@ const GenerateVideoPage = () => {
   useEffect(() => {
     if (!loading) { setElapsed(0); return; }
     const t = setInterval(() => setElapsed(e => {
-      // Avança os steps visuais do modo personagem com base no tempo estimado de cada etapa
-      if (loadingStep === 'scene' && e === 14) setLoadingStep('inpaint');   // GPT-Image-2 ~15s
-      if (loadingStep === 'inpaint' && e === 59) setLoadingStep('animate'); // LoRA inpaint ~45s
+      if (loadingStep === 'scene'     && e === 14)  setLoadingStep('character'); // GPT-Image-2 ~15s
+      if (loadingStep === 'character' && e === 59)  setLoadingStep('animate');  // LoRA img2img ~45s
+      if (loadingStep === 'animate'   && e === 299 && voiceScript) setLoadingStep('audio'); // MiniMax ~4min
       return e + 1;
     }), 1000);
     return () => clearInterval(t);
-  }, [loading, loadingStep]);
+  }, [loading, loadingStep, voiceScript]);
 
   const loadChannel = async () => {
     try {
@@ -438,68 +438,69 @@ const GenerateVideoPage = () => {
 
       {/* Loading */}
       {loading && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-16 text-center">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/40 dark:to-purple-900/40 mb-6 relative">
-            {loadingStep === 'inpaint' ? <User size={36} className="text-violet-600" /> : <Video size={36} className="text-violet-600" />}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-10 text-center">
+          {/* Ícone animado */}
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/40 dark:to-purple-900/40 mb-5 relative">
+            {loadingStep === 'character' ? <User size={32} className="text-violet-600" /> :
+             loadingStep === 'audio'     ? <span className="text-2xl">🎙️</span> :
+                                          <Video size={32} className="text-violet-600" />}
             <div className="absolute inset-0 rounded-full border-4 border-violet-200 dark:border-violet-800 border-t-violet-600 animate-spin" />
           </div>
 
-          {loadingStep === 'scene' ? (
+          {/* Título + descrição por step */}
+          {loadingStep === 'scene' && (
             <>
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Gerando cena com GPT-Image-2...</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto mb-4">
-                Criando a composição, iluminação e background da cena.
-              </p>
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <Step active label="Cena" n="1" />
-                <Connector />
-                <Step label="Personagem" n="2" />
-                <Connector />
-                <Step label="Vídeo" n="3" />
-              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1">Gerando cena com GPT-Image-2</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto">Compondo iluminação, cenário e pose para o personagem. ~15s</p>
             </>
-          ) : loadingStep === 'inpaint' ? (
+          )}
+          {loadingStep === 'character' && (
             <>
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Aplicando personagem com LoRA...</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto mb-4">
-                Detectando rosto na cena e substituindo pelo seu personagem.
-              </p>
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <Step done label="Cena" n="1" />
-                <Connector done />
-                <Step active label="Personagem" n="2" />
-                <Connector />
-                <Step label="Vídeo" n="3" />
-              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1">Aplicando sua identidade com LoRA</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto">O modelo treinado com suas fotos substitui o rosto na cena. ~45s</p>
             </>
-          ) : loadingStep === 'animate' ? (
+          )}
+          {loadingStep === 'animate' && (
             <>
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Animando com MiniMax...</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto mb-4">
-                Transformando a cena em vídeo. Pode levar até 5 minutos.
-              </p>
-              <div className="flex items-center justify-center gap-2 mb-4">
-                <Step done label="Cena" n="1" />
-                <Connector done />
-                <Step done label="Personagem" n="2" />
-                <Connector done />
-                <Step active label="Vídeo" n="3" />
-              </div>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1">Animando com MiniMax Video-01</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto">Transformando o frame em vídeo com movimento natural. Pode levar até 5 min.</p>
             </>
-          ) : (
+          )}
+          {loadingStep === 'audio' && (
             <>
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Sora está criando seu vídeo...</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto mb-4">
-                A geração de vídeo com IA leva entre 30 segundos e 2 minutos. Aguarde.
-              </p>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1">Sincronizando voz com LatentSync</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto">Gerando narração com sua voz clonada e sincronizando os lábios. ~2 min.</p>
+            </>
+          )}
+          {loadingStep === 'sora' && (
+            <>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1">Sora está criando seu vídeo</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto">A geração leva entre 30s e 2 minutos. Aguarde.</p>
             </>
           )}
 
-          <div className="inline-flex items-center gap-2 bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 text-sm font-medium px-4 py-2 rounded-full">
-            <Clock size={14} />
+          {/* Barra de passos — só no modo personagem */}
+          {loadingStep !== 'sora' && (
+            <div className="flex items-center justify-center gap-1.5 mt-5 mb-4 flex-wrap">
+              <Step done={['character','animate','audio'].includes(loadingStep)} active={loadingStep==='scene'} label="Cena" n="1" />
+              <Connector done={['animate','audio'].includes(loadingStep) || (loadingStep==='character')} />
+              <Step done={['animate','audio'].includes(loadingStep)} active={loadingStep==='character'} label="Personagem" n="2" />
+              <Connector done={['audio'].includes(loadingStep) || loadingStep==='animate'} />
+              <Step done={loadingStep==='audio'} active={loadingStep==='animate'} label="Vídeo" n="3" />
+              {voiceScript && (
+                <>
+                  <Connector done={loadingStep==='audio'} />
+                  <Step active={loadingStep==='audio'} label="Áudio" n="4" />
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="inline-flex items-center gap-2 bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 text-sm font-medium px-4 py-2 rounded-full mt-1">
+            <Clock size={13} />
             {elapsed}s
           </div>
-          <div className="flex justify-center gap-2 mt-6">
+          <div className="flex justify-center gap-2 mt-5">
             {[0, 1, 2].map(i => (
               <div key={i} className="w-2 h-2 bg-violet-500 rounded-full animate-bounce"
                 style={{ animationDelay: `${i * 0.15}s` }} />
