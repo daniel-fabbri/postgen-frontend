@@ -22,6 +22,25 @@ const SIZES = [
 
 const CHARACTER_VIDEO_COST = 350;
 
+function Step({ n, label, active, done }) {
+  return (
+    <div className="flex items-center gap-1">
+      <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+        done ? 'bg-emerald-500 text-white' : active ? 'bg-violet-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+      }`}>
+        {done ? '✓' : n}
+      </div>
+      <span className={`text-xs font-semibold ${
+        done ? 'text-emerald-600 dark:text-emerald-400' : active ? 'text-violet-600 dark:text-violet-400' : 'text-gray-400'
+      }`}>{label}</span>
+    </div>
+  );
+}
+
+function Connector({ done }) {
+  return <div className={`h-px w-6 ${done ? 'bg-emerald-400' : 'bg-gray-300 dark:bg-gray-600'}`} />;
+}
+
 const GenerateVideoPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -51,8 +70,9 @@ const GenerateVideoPage = () => {
   useEffect(() => {
     if (!loading) { setElapsed(0); return; }
     const t = setInterval(() => setElapsed(e => {
-      // Após ~45s no modo personagem, avança visualmente para o step de animação
-      if (loadingStep === 'frame' && e === 44) setLoadingStep('animate');
+      // Avança os steps visuais do modo personagem com base no tempo estimado de cada etapa
+      if (loadingStep === 'scene' && e === 14) setLoadingStep('inpaint');   // GPT-Image-2 ~15s
+      if (loadingStep === 'inpaint' && e === 59) setLoadingStep('animate'); // LoRA inpaint ~45s
       return e + 1;
     }), 1000);
     return () => clearInterval(t);
@@ -91,7 +111,7 @@ const GenerateVideoPage = () => {
 
   const handleGenerateWithCharacter = async () => {
     setLoading(true);
-    setLoadingStep('frame');
+    setLoadingStep('scene');
     setVideo(null);
     setCaption('');
     setPublished(false);
@@ -349,45 +369,50 @@ const GenerateVideoPage = () => {
       {loading && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-16 text-center">
           <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 dark:from-violet-900/40 dark:to-purple-900/40 mb-6 relative">
-            {loadingStep === 'frame' ? <User size={36} className="text-violet-600" /> : <Video size={36} className="text-violet-600" />}
+            {loadingStep === 'inpaint' ? <User size={36} className="text-violet-600" /> : <Video size={36} className="text-violet-600" />}
             <div className="absolute inset-0 rounded-full border-4 border-violet-200 dark:border-violet-800 border-t-violet-600 animate-spin" />
           </div>
 
-          {loadingStep === 'frame' ? (
+          {loadingStep === 'scene' ? (
             <>
-              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Gerando frame do personagem...</h3>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Gerando cena com GPT-Image-2...</h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto mb-4">
-                Aplicando seu LoRA para criar o frame de referência em portrait.
+                Criando a composição, iluminação e background da cena.
               </p>
-              {/* Steps indicator */}
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 dark:text-violet-400">
-                  <div className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px]">1</div>
-                  Frame LoRA
-                </div>
-                <div className="h-px w-8 bg-gray-300 dark:bg-gray-600" />
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-400">
-                  <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 flex items-center justify-center text-[10px]">2</div>
-                  Animar vídeo
-                </div>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Step active label="Cena" n="1" />
+                <Connector />
+                <Step label="Personagem" n="2" />
+                <Connector />
+                <Step label="Vídeo" n="3" />
+              </div>
+            </>
+          ) : loadingStep === 'inpaint' ? (
+            <>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Aplicando personagem com LoRA...</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto mb-4">
+                Detectando rosto na cena e substituindo pelo seu personagem.
+              </p>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Step done label="Cena" n="1" />
+                <Connector done />
+                <Step active label="Personagem" n="2" />
+                <Connector />
+                <Step label="Vídeo" n="3" />
               </div>
             </>
           ) : loadingStep === 'animate' ? (
             <>
               <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Animando com MiniMax...</h3>
               <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto mb-4">
-                Transformando o frame do personagem em vídeo. Pode levar até 5 minutos.
+                Transformando a cena em vídeo. Pode levar até 5 minutos.
               </p>
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center">✓</div>
-                  Frame LoRA
-                </div>
-                <div className="h-px w-8 bg-violet-400" />
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 dark:text-violet-400">
-                  <div className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px]">2</div>
-                  Animar vídeo
-                </div>
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Step done label="Cena" n="1" />
+                <Connector done />
+                <Step done label="Personagem" n="2" />
+                <Connector done />
+                <Step active label="Vídeo" n="3" />
               </div>
             </>
           ) : (
