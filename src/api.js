@@ -109,6 +109,7 @@ export const videosAPI = {
       channel_id: channelId,
       additional_prompt: additionalPrompt || null,
     }),
+  getCharacterJob: (jobId) => api.get(`/videos/character-job/${jobId}`),
   updateCaption: (id, caption) => api.patch(`/videos/${id}/caption`, { caption }),
   publish: (id) => api.post(`/videos/${id}/publish`),
   delete: (id) => api.delete(`/videos/${id}`),

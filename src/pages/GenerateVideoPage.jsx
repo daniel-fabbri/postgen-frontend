@@ -115,14 +115,37 @@ const GenerateVideoPage = () => {
     setVideo(null);
     setCaption('');
     setPublished(false);
+
+    const pollJob = async (jobId) => {
+      try {
+        const poll = await videosAPI.getCharacterJob(jobId);
+        const { status, video: v, error } = poll.data;
+        if (status === 'completed' && v) {
+          setVideo(v);
+          setCaption(v.caption || '');
+          await refreshUser();
+          setLoading(false);
+          setLoadingStep('');
+        } else if (status === 'failed') {
+          alert('Erro ao gerar vídeo com personagem: ' + (error || 'Erro desconhecido'));
+          setLoading(false);
+          setLoadingStep('');
+        } else {
+          setTimeout(() => pollJob(jobId), 6000);
+        }
+      } catch (err) {
+        alert('Erro ao verificar status: ' + (err.response?.data?.detail || err.message));
+        setLoading(false);
+        setLoadingStep('');
+      }
+    };
+
     try {
       const res = await videosAPI.generateWithCharacter(id, additionalPrompt);
-      setVideo(res.data);
-      setCaption(res.data.caption || '');
-      await refreshUser();
+      const { job_id } = res.data;
+      setTimeout(() => pollJob(job_id), 8000); // primeiro poll após 8s
     } catch (err) {
-      alert('Erro ao gerar vídeo com personagem: ' + (err.response?.data?.detail || err.message));
-    } finally {
+      alert('Erro ao iniciar geração: ' + (err.response?.data?.detail || err.message));
       setLoading(false);
       setLoadingStep('');
     }
